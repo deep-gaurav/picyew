@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Pictionary</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="/bulma.min.css">
+        <script>
+            history.pushState = ( f => function pushState(){
+                var ret = f.apply(this, arguments);
+                window.dispatchEvent(new Event('pushstate'));
+                window.dispatchEvent(new Event('locationchange'));
+                return ret;
+            })(history.pushState);
+
+            history.replaceState = ( f => function replaceState(){
+                var ret = f.apply(this, arguments);
+                window.dispatchEvent(new Event('replacestate'));
+                window.dispatchEvent(new Event('locationchange'));
+                return ret;
+            })(history.replaceState);
+
+            window.addEventListener('popstate',()=>{
+                window.dispatchEvent(new Event('locationchange'))
+            });
+        </script>
+    </head>
+    <body>
+        <script src="adapter.min.js"></script>
+        <script>
+            AdapterJS.webRTCReady(function(isUsingPlugin) {
+                console.info("ApaderJS Loaded, isUsingPlugin : ",isUsingPlugin);
+            });
+        </script>
+        <div id="approot"/>
+        <script src="/bundle.js" defer></script>
+        <script type="text/javascript" id="matomo">
+            var _paq = window._paq || [];
+            /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+            _paq.push(['trackPageView']);
+            _paq.push(['enableLinkTracking']);
+            (function () {
+              var u = "//analytics.deepraven.co/";
+              _paq.push(['setTrackerUrl', u + 'matomo.php']);
+              _paq.push(['setSiteId', '2']);
+              var d = document, g = d.createElement('script'), s = d.getElementById("matomo");
+              g.type = 'text/javascript'; g.async = true; g.defer = true; g.src = u + 'matomo.js'; s.parentNode.insertBefore(g, s);
+            })();
+        
+            window.addEventListener('locationchange', function() {
+                _paq.push(['setCustomUrl', '/' + window.location.pathname]);
+                _paq.push(['setDocumentTitle', window.document.title]);
+                _paq.push(['setGenerationTimeMs', 3000]);
+                _paq.push(['trackPageView']);
+            });
+        </script>
+          <!-- End Matomo Code -->
+    </body>
+</html>
