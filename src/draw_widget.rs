@@ -1,11 +1,9 @@
 use yew::prelude::*;
 
-use std::cell::Cell;
-use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
-use crate::lobby::*;
+use crate::structures::*;
 use crate::socket_agent::*;
 
 use web_sys::*;
@@ -35,50 +33,6 @@ pub enum ToolBoxOpen {
     None,
 }
 
-use serde::{Deserialize, Serialize};
-#[derive(Serialize, Deserialize, Clone,Debug)]
-pub struct Point {
-    id: u32,
-    line_width: u32,
-    x: f64,
-    y: f64,
-    width: f64,
-    height: f64,
-    draw: bool,
-    color: String,
-    eraser: bool
-}
-
-impl Point {
-    fn get_x(&self, canvas: &HtmlCanvasElement) -> f64 {
-        let rect = canvas.get_bounding_client_rect();
-        self.x * {
-            if self.width > self.height {
-                (rect.width() as f64) / self.width
-            } else {
-                (rect.height() as f64) / self.height
-            }
-        }
-    }
-    fn get_y(&self, canvas: &HtmlCanvasElement) -> f64 {
-        let rect = canvas.get_bounding_client_rect();
-        self.y * {
-            if self.width > self.height {
-                (rect.width() as f64) / self.width
-            } else {
-                (rect.height() as f64) / self.height
-            }
-        }
-    }
-
-    fn get_scale_factor(&self,canvas: &HtmlCanvasElement)->f64{
-        if self.width > self.height {
-            (canvas.width() as f64) / self.width
-        } else {
-            (canvas.height() as f64) / self.height
-        }   
-    }
-}
 
 pub enum Msg {
     Ignore,
@@ -111,7 +65,8 @@ pub enum Msg {
 
 #[derive(Properties, Clone, Debug)]
 pub struct Props {
-    pub draw:bool
+    pub draw:bool,
+    pub initialpoints:Vec<Point>
 }
 
 impl Component for DrawWidget {
@@ -120,46 +75,22 @@ impl Component for DrawWidget {
 
     fn create(_props: Self::Properties, _link: ComponentLink<Self>) -> Self {
         log::info!("new Drawboard created");
-        let mut agent = SocketAgent::bridge(_link.callback(|data| match data {
-            AgentOutput::LobbyOutput(data)=>{
-                match data{
-                    LobbyOutputs::PeerMessage(id,msg,lobby)=>{
-                        if msg.command.starts_with("D"){
-                            match serde_json::from_str::<Vec<Point>>(
-                                &crate::atob(&msg.data.clone().unwrap_or_default())
-                            ){
-                                Ok(data)=>{
-                                    Msg::SetData(data)
-                                },
-                                Err(err)=>{
-                                    log::warn!("Not vec of points {:#?}",err);
-                                    Msg::Ignore
-                                }
-                            }
-                        }else{
-                            Msg::Ignore
-                        }
+        let draw = _props.draw;
+        let agent = SocketAgent::bridge(_link.callback(move |data| match data {
+            AgentOutput::SocketMessage(msg)=>match msg{
+                SocketMessage::AddPoints(pts)=>{
+                    if draw{
+                       Msg::Ignore
                     }
-                    LobbyOutputs::PeerBinaryMessage(id,msg)=>{
-                        match bincode::deserialize::<Vec<Point>>(
-                            &msg[..]
-                        ){
-                            Ok(data)=>{
-                                Msg::SetData(data)
-                            },
-                            Err(err)=>{
-                                log::warn!("Not vec of points {:#?}",err);
-                                Msg::Ignore
-                            }
-                        }
+                    else{
+                        Msg::SetData(pts)
                     }
-                    _=>Msg::Ignore
-                }
+                },
+                _=>Msg::Ignore
             }
             _=>Msg::Ignore
         }));
-        agent.send(AgentInput::LobbyInput(LobbyInputs::RequestLobby));
-        let interval = yew::services::IntervalService::spawn(std::time::Duration::from_millis(100),
+        let interval = yew::services::IntervalService::spawn(std::time::Duration::from_millis(300),
             _link.callback(
                 |_|{
                     Msg::SendData
@@ -172,7 +103,7 @@ impl Component for DrawWidget {
             cursor_ref: NodeRef::default(),
             link: _link,
             context: None,
-            points: vec![],
+            points: _props.initialpoints.clone(),
             todraw: vec![],
             tosend: vec![],
             pressed: false,
@@ -264,18 +195,27 @@ impl Component for DrawWidget {
                 false
             }
             Msg::SendData=>{
+                if !self.todraw.is_empty(){
+                    self.draw();
+                }
                 if self.tosend.is_empty(){
                    return true; 
                 }
+                // TODO: FIX DRAW WIDGET
+                // self._socket_agent.send(
+                //     AgentInput::LobbyInput(
+                //         LobbyInputs::PeerBroadcastBinaryMessage(
+                //             bincode::serialize(&self.tosend).unwrap()
+                //         )
+                //     )
+                // );
                 self._socket_agent.send(
-                    AgentInput::LobbyInput(
-                        LobbyInputs::PeerBroadcastBinaryMessage(
-                            bincode::serialize(&self.tosend).unwrap()
-                        )
+                    AgentInput::Send(
+                        PlayerMessage::AddPoints(self.tosend.clone())
                     )
                 );
                 self.tosend.clear();
-                true
+                false
             }
             Msg::SetData(mut data)=>{
                 self.points.append(&mut data.clone());
@@ -287,7 +227,10 @@ impl Component for DrawWidget {
     }
 
     fn rendered(&mut self, _first_render: bool) {
-        self.initcanvas();
+        // self.initcanvas();
+        if _first_render{
+            self.initcanvas();
+        }
     }
 
     fn change(&mut self, _props: Self::Properties) -> ShouldRender {
@@ -630,7 +573,7 @@ impl DrawWidget {
 
         self.todraw.clear();
         self.todraw.append(&mut self.points.clone());
-        self.draw();
+        // self.draw();
     }
 
     fn draw(&mut self) {

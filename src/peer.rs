@@ -1,11 +1,11 @@
 use yew::prelude::*;
 
-use crate::lobby::*;
+use crate::structures::*;
 use crate::socket_agent::*;
 
 pub struct PeerWidget {
     _socket_agent: Box<dyn yew::Bridge<SocketAgent>>,
-    peer: Peer,
+    peer: Player,
 }
 
 pub enum Msg {
@@ -14,7 +14,7 @@ pub enum Msg {
 
 #[derive(Properties, Clone, Debug)]
 pub struct Props {
-    pub peer: Peer,
+    pub peer: Player,
 }
 
 impl Component for PeerWidget {
@@ -25,7 +25,7 @@ impl Component for PeerWidget {
         let mut agent = SocketAgent::bridge(_link.callback(|data| match data {
             _ => Msg::Ignore,
         }));
-        agent.send(AgentInput::LobbyInput(LobbyInputs::RequestLobby));
+        // agent.send(AgentInput::LobbyInput(LobbyInputs::RequestLobby));
         Self {
             _socket_agent: agent,
             peer: _props.peer,

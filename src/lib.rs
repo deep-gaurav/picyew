@@ -4,14 +4,12 @@ mod avatar;
 mod chat_history;
 mod draw_widget;
 mod home;
-mod lobby;
 mod peer;
-mod peer_handler;
 mod room;
 mod room_mediator;
 mod socket_agent;
 mod gameroom;
-mod data;
+mod structures;
 
 use wasm_bindgen::prelude::*;
 

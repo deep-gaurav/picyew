@@ -1,24 +1,28 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-use crate::draw_widget::DrawWidget;
+use crate::room::Room;
+use crate::gameroom::Game;
 use crate::home::Home;
-use crate::room_mediator::{RoomMediator,Page};
 
 use crate::socket_agent::*;
+use crate::structures::*;
 
 pub struct App {
     _agent: Box<dyn yew::Bridge<SocketAgent>>,
+    lobby:Option<Lobby>,
+    selfid: String,
+    link: ComponentLink<Self>
 }
 
 pub enum Msg {
     Ignore,
+    LobbyJoined(String,Lobby),
+    GameStart(Lobby),
 }
 
 #[derive(Switch, Debug, Clone)]
 pub enum AppRoute {
-    #[to = "/game/{roomid}"]
-    Game(String),
     #[to = "/{roomid}"]
     Room(String),
     #[to = "/"]
@@ -38,12 +42,25 @@ impl Component for App {
         let agent = SocketAgent::bridge(_link.callback(|data| match data {
             _ => Msg::Ignore,
         }));
-        App { _agent: agent }
+        App { _agent: agent ,
+            lobby:None,
+            link:_link,
+            selfid:unsafe{crate::home::get_uid()}
+        }
     }
 
     fn update(&mut self, _msg: Self::Message) -> ShouldRender {
         match _msg {
             Msg::Ignore => false,
+            Msg::LobbyJoined(selfid,lob)=>{
+                self.selfid=selfid;
+                self.lobby=Some(lob);
+                true
+            }
+            Msg::GameStart(lob)=>{
+                self.lobby=Some(lob);
+                true
+            }
         }
     }
 
@@ -52,18 +69,42 @@ impl Component for App {
     }
 
     fn view(&self) -> Html {
+
+        let home = html!{
+            <Home prefillroomid="".to_string() lobbyjoinedcb=self.link.callback(move |f:(String,Lobby)|Msg::LobbyJoined(f.0,f.1))/>
+        };
+        let lobby = self.lobby.clone();
+        let selfid = self.selfid.clone();
+        let linkclone = self.link.clone();
         html! {
             <div>
                 <Router<AppRoute, ()>
-                    render = Router::render(|switch: AppRoute| {
+                    render = Router::render(move |switch: AppRoute| {
+                        let home = home.clone();
+                        let lobby = lobby.clone();
+                        let selfid = selfid.clone();
+                        let link = linkclone.clone();
                         match switch {
-                            AppRoute::Home=>html!{<Home/>},
-
-                            AppRoute::Game(_roomid)=>html!{
-                                <RoomMediator key=format!("game") roomid=_roomid page=Page::Game/>
-                            },
-                            AppRoute::Room(_roomid)=>html!{
-                                <RoomMediator key=format!("room") roomid=_roomid page=Page::Lobby/>
+                            AppRoute::Home=>home.clone(),
+                            AppRoute::Room(_roomid)=>{
+                                if let Some(lobby)=lobby.clone(){
+                                    match &lobby.state{
+                                        State::Lobby(leader)=>{
+                                            html!{
+                                                <Room gamestartcb=link.callback(|lob|Msg::GameStart(lob)) selfid=selfid lobby=lobby />
+                                            }
+                                        }
+                                        State::Game(id,_)=>{
+                                            html!{
+                                                <Game selfid=selfid lobby=lobby />
+                                            }
+                                        }
+                                    }
+                                }else{
+                                    html!{
+                                        <Home prefillroomid=_roomid lobbyjoinedcb=linkclone.callback(move |f:(String,Lobby)|Msg::LobbyJoined(f.0,f.1))/>
+                                    }
+                                }
                             },
                         }
                     })

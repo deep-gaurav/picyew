@@ -2,9 +2,12 @@ use yew::prelude::*;
 
 use crate::avatar::avatar;
 use crate::socket_agent::{
-    AgentInput, AgentOutput, LobbyOutputs, SocketAgent, SocketInputs, SocketOutputs, TransferData,
+    AgentInput, AgentOutput, SocketAgent
 };
+use crate::structures::*;
 use lazy_static::lazy_static;
+
+use wasm_bindgen::*;
 
 lazy_static! {
     static ref SIGNAL_URL: String = String::from("wss://signalws.herokuapp.com");
@@ -16,6 +19,21 @@ pub struct Home {
     link: ComponentLink<Self>,
     is_connecting: bool,
     socket_agent: Box<dyn yew::Bridge<SocketAgent>>,
+    props:Props
+}
+
+#[derive(Debug,Properties,Clone)]
+pub struct Props{
+    pub lobbyjoinedcb:Callback<(String,Lobby)>,
+    pub prefillroomid:String
+}
+
+
+use wasm_bindgen::prelude::*;
+#[wasm_bindgen]
+extern "C"{
+    #[wasm_bindgen(js_namespace = window)]
+    pub fn get_uid()->String;
 }
 
 pub enum Msg {
@@ -24,35 +42,38 @@ pub enum Msg {
     ErrorConnecting,
     Connect,
     Ignore,
-    LobbyJoined(crate::lobby::Lobby),
+    LobbyJoined(Lobby),
     NameChange(String),
     RoomIdChange(String),
 }
 
 impl Component for Home {
     type Message = Msg;
-    type Properties = ();
+    type Properties = Props;
 
-    fn create(_: Self::Properties, _link: ComponentLink<Self>) -> Self {
+    fn create(_props: Self::Properties, _link: ComponentLink<Self>) -> Self {
         let agent = SocketAgent::bridge(_link.callback(|data| match data {
-            AgentOutput::SocketOutput(out) => match out {
-                SocketOutputs::Connected => Msg::Connected,
-                SocketOutputs::Disconnected => Msg::Disconnected,
-                SocketOutputs::ErrorConnecting => Msg::ErrorConnecting,
-                SocketOutputs::SocketMessage(_) => Msg::Ignore,
-            },
-            AgentOutput::LobbyOutput(out) => match out {
-                LobbyOutputs::Connected(lob) => Msg::LobbyJoined(lob),
-                LobbyOutputs::RequestResult(_) => Msg::Ignore,
-                _ => Msg::Ignore,
-            },
+            AgentOutput::SocketConnected=>Msg::Connected,
+            
+            AgentOutput::SocketMessage(msg) => {
+                match msg{
+                    SocketMessage::LobbyJoined(lobby) => {
+                        Msg::LobbyJoined(lobby)
+                    }
+                    SocketMessage::Close(_) => {Msg::Disconnected},
+                    _ => Msg::Ignore
+                }
+            }
+            AgentOutput::SocketDisconnected => {Msg::Disconnected}
+            AgentOutput::SocketErrorConnecting => {Msg::ErrorConnecting}
         }));
         Home {
             name: "".to_string(),
-            room_id: "".to_string(),
+            room_id: _props.prefillroomid.clone(),
             link: _link,
             socket_agent: agent,
             is_connecting: false,
+            props:_props
         }
     }
 
@@ -72,22 +93,36 @@ impl Component for Home {
                 } else {
                     self.is_connecting = true;
                     self.socket_agent
-                        .send(AgentInput::SocketInput(SocketInputs::Connect(
-                            SIGNAL_URL.to_string(),
-                            self.name.clone(),
-                        )));
+                        .send(
+                            AgentInput::Connect(SIGNAL_URL.to_string())
+                        );
                     true
                 }
             }
             Msg::Connected => {
+                let uid = unsafe {get_uid()};
+                log::info!("uid is {:#?}",uid);
                 self.socket_agent
-                    .send(AgentInput::SocketInput(SocketInputs::SendData(
-                        TransferData {
-                            command: "J".to_string(),
-                            id: Some(self.room_id.clone()),
-                            data: None,
-                        },
-                    )));
+                    .send(
+                        AgentInput::Send(
+                            PlayerMessage::Initialize(
+                                uid,self.name.to_string()
+                            )
+                        )
+                    );
+                if self.room_id.is_empty(){
+                    self.socket_agent.send(
+                        AgentInput::Send(
+                            PlayerMessage::CreateLobby
+                        )
+                    );
+                }else{
+                    self.socket_agent.send(
+                        AgentInput::Send(
+                            PlayerMessage::JoinLobby(self.room_id.clone())
+                        )
+                    );
+                }
                 false
             }
             Msg::Disconnected => {
@@ -100,8 +135,10 @@ impl Component for Home {
             }
             Msg::LobbyJoined(lob) => {
                 crate::app::go_to_route(yew_router::route::Route::from(
-                    crate::app::AppRoute::Room(lob.roomid),
+                    crate::app::AppRoute::Room(lob.id.clone()),
                 ));
+                let uid = unsafe {get_uid()};
+                self.props.lobbyjoinedcb.emit((uid,lob));
                 true
             }
             Msg::Ignore => false,
@@ -142,7 +179,7 @@ impl Component for Home {
                         <fieldset disabled=self.name.is_empty() || self.is_connecting>
                         <div class="field has-addons">
                             <div class="control is-expanded">
-                                <input oninput=self.link.callback(|msg:InputData|Msg::RoomIdChange(msg.value)) class="input" type="text" placeholder="Enter Room Id to join"/>
+                                <input value=self.room_id.clone() oninput=self.link.callback(|msg:InputData|Msg::RoomIdChange(msg.value)) class="input" type="text" placeholder="Enter Room Id to join"/>
                             </div>
                             <div class="control">
                                 <a onclick=self.link.callback(|_|Msg::Connect) class=format!("button is-info {}",if self.is_connecting{"is-loading"}else{""})>

@@ -26,11 +26,11 @@
         </script>
     </head>
     <body>
-        <script src="adapter.min.js"></script>
         <script>
-            AdapterJS.webRTCReady(function(isUsingPlugin) {
-                console.info("ApaderJS Loaded, isUsingPlugin : ",isUsingPlugin);
-            });
+            let t = + new Date();
+            let id = localStorage.getItem("player_id") || btoa(t.toString());
+            localStorage.setItem("player_id",id);
+            window.get_uid = ()=>id.toString();
         </script>
         <div id="approot"/>
         <script src="/bundle.js" defer></script>

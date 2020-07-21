@@ -1,6 +1,6 @@
 use yew::prelude::*;
 
-use crate::lobby::*;
+use crate::structures::*;
 use crate::socket_agent::*;
 use crate::draw_widget::DrawWidget;
 use crate::chat_history::ChatHistory;
@@ -17,19 +17,21 @@ lazy_static! {
 pub struct Game {
     _socket_agent: Box<dyn yew::Bridge<SocketAgent>>,
     lobby:Lobby,
+    selfid:String,
     link:ComponentLink<Self>,
 }
 
 pub enum Msg {
     Ignore,
-    Refresh(Lobby),
-    NewTurn(u32),
-    Message(u32,TransferData)
+    PlayerJoin(Player),
+    PlayerDisconnect(Player),
+    LeaderChange(State)
 }
 
 #[derive(Properties, Clone, Debug)]
 pub struct Props {
     pub lobby: Lobby,
+    pub selfid: String,
 }
 
 impl Component for Game {
@@ -38,40 +40,44 @@ impl Component for Game {
 
     fn create(_props: Self::Properties, _link: ComponentLink<Self>) -> Self {
         let mut agent = SocketAgent::bridge(_link.callback(|data| match data {
-            AgentOutput::LobbyOutput(data)=>{
-                match data{
-                    LobbyOutputs::LobbyRefresh(lobby)=>Msg::Refresh(lobby),
-                    LobbyOutputs::TurnChaned(old,new)=>{
-                        Msg::NewTurn(new)
+            AgentOutput::SocketMessage(msg)=>{
+                match msg{
+                    SocketMessage::PlayerJoined(p)=>{
+                        Msg::PlayerJoin(p)
                     }
-                    LobbyOutputs::PeerMessage(id,msg,_lobby)=>Msg::Message(id,msg),
+                    SocketMessage::PlayerDisconnected(p)=>{
+                        Msg::PlayerDisconnect(p)
+                    }
+                    SocketMessage::LeaderChange(leader)=>{
+                        Msg::LeaderChange(leader)
+                    }
                     _=>Msg::Ignore
                 }
             }
             _=>Msg::Ignore
         }));
-        agent.send(AgentInput::LobbyInput(LobbyInputs::RequestLobby));
         Self {
             _socket_agent: agent,
             lobby:_props.lobby,
-            link:_link
+            link:_link,
+            selfid: _props.selfid
         }
     }
 
     fn update(&mut self, _msg: Self::Message) -> ShouldRender {
         match _msg {
             Msg::Ignore => false,
-            Msg::Refresh(lobby)=>{
-                self.lobby=lobby;
-                self.refresh();
+            Msg::LeaderChange(leader)=>{
+                self.lobby.state = leader;
                 true
             }
-            Msg::NewTurn(turn)=>{
-                self.new_turn(&turn);
+            Msg::PlayerJoin(p)=>{
+                self.lobby.players.insert(p.id.clone(), p);
                 true
             }
-            Msg::Message(id,msg)=>{
-                false
+            Msg::PlayerDisconnect(p)=>{
+                self.lobby.players.remove(&p.id);
+                true
             }
         }
     }
@@ -81,18 +87,33 @@ impl Component for Game {
     }
 
     fn view(&self) -> Html {
+
+        let leader = self.lobby.state.leader().to_string();
+        
+        let points = {
+            match &self.lobby.state{
+                State::Game(_,pt)=>pt.drawing.clone(),
+                State::Lobby(_)=>vec![]
+            }
+        };
+        let word = {
+            match &self.lobby.state{
+                State::Game(_,pt)=>pt.word.clone(),
+                State::Lobby(_)=>String::default()
+            }
+        }; 
         html! {
             <div class="section py-2">
             <div class="">
                 <div class="container">
                     <h1 class="title has-text-centered">
-                        {format!("Room {}",self.lobby.roomid)}
+                        {format!("Room {}",self.lobby.id)}
                     </h1>
                 </div>
             </div>
             <div class="columns  is-mobile mt-3">
             {
-                for self.lobby.peers.iter().map(|p|html!{
+                for self.lobby.players.iter().map(|p|html!{
                     <div class="column">
                     <PeerWidget key=format!("{:#?}",p) peer=p.1.clone()/>
                     </div>
@@ -101,23 +122,20 @@ impl Component for Game {
             </div>
             <div class="container my-2 has-text-centered" style="letter-spacing:2px;">
                 {
-                    if self.lobby.selfid==self.lobby.turn{
+                    if self.selfid==leader{
                         
-                        self.lobby.word.clone()
+                        word.clone()
                         
                     }else{
-                        if self.lobby.peers.get(&self.lobby.selfid).and_then(|f|Some(f.guessed)).unwrap_or_default(){
-                            "You Guessed it !".to_string()
-                        }else{
-                            WORD_HIDE_REGEX.replace_all(&self.lobby.word,"_").to_string()
-                        }
+                        WORD_HIDE_REGEX.replace_all(&word.clone(),"_").to_string()   
                     }
+                    
                 }
             </div>
             <div class="columns">
                 <div class="column  is-three-quarters-widescreen">
-                    <div key=self.lobby.turn style="">
-                        <DrawWidget draw=self.lobby.turn==self.lobby.selfid/>
+                    <div key=leader.clone() style="">
+                        <DrawWidget draw=&leader==&self.selfid initialpoints=points />
                     </div>
                 </div>
 
@@ -132,67 +150,68 @@ impl Component for Game {
 impl Game{
 
     fn new_turn(&mut self,turn:&u32){
-        if turn==&self.lobby.selfid{
-            use crate::data::WORDS;
-            let randomword = &WORDS[
-                (js_sys::Math::random()*WORDS.len() as f64)as usize
-            ];
-            self._socket_agent.send(AgentInput::LobbyInput(
-                LobbyInputs::ChangeWord(randomword.clone())
-            ));
-            // self.link.send_message(Msg::Refresh(self.lobby.clone()));
-        }
+        // if turn==&self.lobby.selfid{
+        //     use crate::data::WORDS;
+        //     let randomword = &WORDS[
+        //         (js_sys::Math::random()*WORDS.len() as f64)as usize
+        //     ];
+        //     self._socket_agent.send(AgentInput::LobbyInput(
+        //         LobbyInputs::ChangeWord(randomword.clone())
+        //     ));
+        //     // self.link.send_message(Msg::Refresh(self.lobby.clone()));
+        // }
     }
 
     fn refresh(&mut self){
-        if !self.lobby.peers.iter().any(|f|f.0==&self.lobby.turn) || (self.has_everyone_guessed() && self.lobby.turn==self.lobby.selfid)
-        {
-            self.decide_turn();
-        }
+        // if !self.lobby.peers.iter().any(|f|f.0==&self.lobby.turn) || (self.has_everyone_guessed() && self.lobby.turn==self.lobby.selfid)
+        // {
+        //     self.decide_turn();
+        // }
     }
 
     fn decide_turn(&mut self){
         
-        let mut keys_iter = self.lobby.peers.keys().sorted();
-        while let Some(peer)=keys_iter.next(){
-            if peer == &self.lobby.turn{
-                if let Some(peer)=keys_iter.next(){
-                    self._socket_agent.send(
-                        AgentInput::LobbyInput(LobbyInputs::ChangeTurn(*peer))
-                    );
-                    return;
-                }
-            }
-        }
-        let mut keys_iter = self.lobby.peers.keys().sorted();
-        if let Some(peer)=keys_iter.next(){
-            self._socket_agent.send(
-                AgentInput::LobbyInput(LobbyInputs::ChangeTurn(*peer))
-            );
-        }
+        // let mut keys_iter = self.lobby.peers.keys().sorted();
+        // while let Some(peer)=keys_iter.next(){
+        //     if peer == &self.lobby.turn{
+        //         if let Some(peer)=keys_iter.next(){
+        //             self._socket_agent.send(
+        //                 AgentInput::LobbyInput(LobbyInputs::ChangeTurn(*peer))
+        //             );
+        //             return;
+        //         }
+        //     }
+        // }
+        // let mut keys_iter = self.lobby.peers.keys().sorted();
+        // if let Some(peer)=keys_iter.next(){
+        //     self._socket_agent.send(
+        //         AgentInput::LobbyInput(LobbyInputs::ChangeTurn(*peer))
+        //     );
+        // }
     }
     fn has_everyone_guessed(&self)-> bool{
-        let guessed;
-        if self.lobby.peers.len()<2{
-            guessed=self.lobby.peers.get(&self.lobby.selfid).and_then(|f|Some(f.guessed)).unwrap_or_default()
-        }else{
-            guessed=true;
-        }
-        for p in &self.lobby.peers{
+        // let guessed;
+        // if self.lobby.peers.len()<2{
+        //     guessed=self.lobby.peers.get(&self.lobby.selfid).and_then(|f|Some(f.guessed)).unwrap_or_default()
+        // }else{
+        //     guessed=true;
+        // }
+        // for p in &self.lobby.peers{
             
-            if !p.1.guessed{
-                if !(p.0 == &self.lobby.turn){
-                    log::info!("{} has not guessed",p.1.name);
-                    return false;
-                }
-            }
+        //     if !p.1.guessed{
+        //         if !(p.0 == &self.lobby.turn){
+        //             log::info!("{} has not guessed",p.1.name);
+        //             return false;
+        //         }
+        //     }
             
-        }
-        if guessed{
-            log::info!("Everyone has guessed");
-        }else{
-            log::info!("Not everyone has guessed");
-        }
-        guessed
+        // }
+        // if guessed{
+        //     log::info!("Everyone has guessed");
+        // }else{
+        //     log::info!("Not everyone has guessed");
+        // }
+        // guessed
+        false
     }
 }

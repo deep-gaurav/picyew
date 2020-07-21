@@ -43,14 +43,6 @@ wasm-bindgen-test = "0.3"
 version = "0.3.4"
 features = [
   'KeyboardEvent',
-  'RtcPeerConnection',
-  'RtcSessionDescriptionInit',
-  'RtcConfiguration',
-  'RtcPeerConnectionIceEvent',
-  'RtcIceCandidate',
-  'RtcDataChannel',
-  'RtcDataChannelEvent',
-  'RtcDataChannelState',
   'HtmlInputElement',
   'RtcIceConnectionState',
   'CanvasRenderingContext2d',
@@ -66,5 +58,6 @@ features = [
   'DomRect',
   'TouchEvent',
   'TouchList',
-  'Touch'
+  'Touch',
+  'BinaryType'
 ]
