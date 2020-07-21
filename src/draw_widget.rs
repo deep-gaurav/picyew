@@ -23,6 +23,7 @@ pub struct DrawWidget {
     current_width: u32,
     is_eraser: bool,
     send_interval: yew::services::interval::IntervalTask,
+    refresh_interval: yew::services::interval::IntervalTask,
     props:Props
 }
 
@@ -39,6 +40,7 @@ pub enum Msg {
     Setup,
 
     CanvasResize,
+    Refresh,
 
     MouseDown(MouseEvent),
     MouseUp(MouseEvent),
@@ -90,10 +92,17 @@ impl Component for DrawWidget {
             }
             _=>Msg::Ignore
         }));
-        let interval = yew::services::IntervalService::spawn(std::time::Duration::from_millis(300),
+        let interval = yew::services::IntervalService::spawn(std::time::Duration::from_millis(100),
             _link.callback(
                 |_|{
                     Msg::SendData
+                }
+            )
+        );
+        let refreshinterval = yew::services::IntervalService::spawn(std::time::Duration::from_secs(1),
+            _link.callback(
+                |_|{
+                    Msg::Refresh
                 }
             )
         );
@@ -112,13 +121,15 @@ impl Component for DrawWidget {
             current_width: 2,
             is_eraser:false,
             send_interval:interval,
-            props:_props
+            props:_props,
+            refresh_interval:refreshinterval
         }
     }
 
     fn update(&mut self, _msg: Self::Message) -> ShouldRender {
         match _msg {
             Msg::Ignore => false,
+            Msg::Refresh => true,
             Msg::CanvasResize => {
                 self.resetcanvas();
                 true

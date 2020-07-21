@@ -78,6 +78,7 @@ impl Component for ChatHistory {
                         PlayerMessage::Chat(message)
                     )
                 );
+                inputel.set_value("");
                 true
             }
         }

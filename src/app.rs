@@ -12,11 +12,13 @@ pub struct App {
     _agent: Box<dyn yew::Bridge<SocketAgent>>,
     lobby:Option<Lobby>,
     selfid: String,
-    link: ComponentLink<Self>
+    link: ComponentLink<Self>,
+    ping_interval: yew::services::interval::IntervalTask,
 }
 
 pub enum Msg {
     Ignore,
+    Ping,
     LobbyJoined(String,Lobby),
     GameStart(Lobby),
 }
@@ -42,15 +44,33 @@ impl Component for App {
         let agent = SocketAgent::bridge(_link.callback(|data| match data {
             _ => Msg::Ignore,
         }));
+        let pinginterval = yew::services::IntervalService::spawn(std::time::Duration::from_millis(500),
+            _link.callback(
+                |_|{
+                    Msg::Ping
+                }
+            )
+        );
         App { _agent: agent ,
             lobby:None,
             link:_link,
-            selfid:unsafe{crate::home::get_uid()}
+            selfid:unsafe{crate::home::get_uid()},
+            ping_interval:pinginterval
         }
     }
 
     fn update(&mut self, _msg: Self::Message) -> ShouldRender {
         match _msg {
+            Msg::Ping=>{
+                if self.lobby.is_some(){
+                    self._agent.send(
+                        AgentInput::Send(
+                            PlayerMessage::Ping
+                        )
+                    )
+                }
+                false
+            }
             Msg::Ignore => false,
             Msg::LobbyJoined(selfid,lob)=>{
                 self.selfid=selfid;
