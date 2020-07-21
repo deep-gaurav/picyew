@@ -140,6 +140,13 @@ impl Component for DrawWidget {
                     canvas.set_height(rect.height() as u32);
                 }
 
+                if canvas.width()  < (rect.width() as u32 )+ error_margin{
+                    canvas.set_width(rect.width() as u32);
+                }
+                if canvas.height() < (rect.height() as u32 )+ error_margin{
+                    canvas.set_height(rect.height() as u32);
+                }
+
                 true
             },
             Msg::CanvasResize => {
