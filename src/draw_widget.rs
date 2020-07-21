@@ -143,11 +143,11 @@ impl Component for DrawWidget {
                     draw=true;
                 }
 
-                if canvas.width()  < (rect.width() as u32 )+ error_margin{
+                if canvas.width()  > (rect.width() as u32 )+ error_margin{
                     canvas.set_width(rect.width() as u32);
                     draw=true;
                 }
-                if canvas.height() < (rect.height() as u32 )+ error_margin{
+                if canvas.height() > (rect.height() as u32 )+ error_margin{
                     canvas.set_height(rect.height() as u32);
                     draw=true;
                 }
