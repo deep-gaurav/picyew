@@ -44,7 +44,7 @@ impl Component for App {
         let agent = SocketAgent::bridge(_link.callback(|data| match data {
             _ => Msg::Ignore,
         }));
-        let pinginterval = yew::services::IntervalService::spawn(std::time::Duration::from_millis(500),
+        let pinginterval = yew::services::IntervalService::spawn(std::time::Duration::from_secs(1),
             _link.callback(
                 |_|{
                     Msg::Ping
