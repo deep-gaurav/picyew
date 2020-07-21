@@ -132,19 +132,29 @@ impl Component for DrawWidget {
             Msg::Refresh => {
                 let canvas: HtmlCanvasElement = self.canvas_ref.cast().expect("Not html canvas element");
                 let rect = canvas.get_bounding_client_rect();
-                let error_margin =5;
+                let error_margin = 15;
+                let mut draw=false;
                 if canvas.width() +error_margin < rect.width() as u32{
                     canvas.set_width(rect.width() as u32);
+                    draw=true;
                 }
                 if canvas.height() + error_margin < rect.height() as u32{
                     canvas.set_height(rect.height() as u32);
+                    draw=true;
                 }
 
                 if canvas.width()  < (rect.width() as u32 )+ error_margin{
                     canvas.set_width(rect.width() as u32);
+                    draw=true;
                 }
                 if canvas.height() < (rect.height() as u32 )+ error_margin{
                     canvas.set_height(rect.height() as u32);
+                    draw=true;
+                }
+                
+                if draw{
+                    self.todraw.append(&mut self.points.clone());
+                    self.draw();
                 }
 
                 true
@@ -274,7 +284,7 @@ impl Component for DrawWidget {
                 <>
                     <div style="">
                     
-                    <canvas style="border-color:black;border-style:solid;touch-action: none;width:100%;min-height:50vh;position:relative;cursor:none;" key="drawboard" onload=self.link.callback(|_|Msg::Setup)
+                    <canvas style="box-sizing:context-box;border-color:black;border-style:solid;touch-action: none;width:100%;min-height:50vh;position:relative;cursor:none;" key="drawboard" onload=self.link.callback(|_|Msg::Setup)
                         onmousedown=self.link.callback(|ev|Msg::MouseDown(ev))
                         onmouseup=self.link.callback(|ev|Msg::MouseUp(ev))
                         onmousemove=self.link.callback(|ev|Msg::MouseMove(ev))
@@ -414,7 +424,7 @@ impl Component for DrawWidget {
         else{
             html!{
                 <div>
-                <canvas style="border-color:black;border-style:solid;touch-action: none;width:100%;height:100%;min-height:50vh;position:relative;" key="drawboard" onload=self.link.callback(|_|Msg::Setup)
+                <canvas style="box-sizing:context-box;border-color:black;border-style:solid;touch-action: none;width:100%;height:100%;min-height:50vh;position:relative;" key="drawboard" onload=self.link.callback(|_|Msg::Setup)
 
                     onresize=self.link.callback(|_|Msg::CanvasResize)
 
