@@ -34,32 +34,20 @@ pub struct GameData{
 use web_sys::*;
 impl Point {
     pub fn get_x(&self, canvas: &HtmlCanvasElement) -> f64 {
-        let rect = canvas.get_bounding_client_rect();
-        self.x * {
-            if rect.width() < rect.height() {
-                (rect.width() as f64) / self.width
-            } else {
-                (rect.height() as f64) / self.height
-            }
-        }
+        self.x * self.get_scale_factor(canvas)
     }
     pub fn get_y(&self, canvas: &HtmlCanvasElement) -> f64 {
-        let rect = canvas.get_bounding_client_rect();
-        self.y * {
-            if rect.width() < rect.height() {
-                (rect.width() as f64) / self.width
-            } else {
-                (rect.height() as f64) / self.height
-            }
-        }
+        self.y * self.get_scale_factor(canvas)
     }
 
     pub fn get_scale_factor(&self,canvas: &HtmlCanvasElement)->f64{
-        if self.width > self.height {
-            (canvas.width() as f64) / self.width
-        } else {
-            (canvas.height() as f64) / self.height
-        }   
+        let wf = canvas.width() as f64/self.width;
+        let hf = canvas.height() as f64/self.height;
+        if wf<hf{
+            wf
+        } else{
+            hf
+        }
     }
 }
 

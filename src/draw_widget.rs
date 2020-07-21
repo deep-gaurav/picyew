@@ -129,7 +129,19 @@ impl Component for DrawWidget {
     fn update(&mut self, _msg: Self::Message) -> ShouldRender {
         match _msg {
             Msg::Ignore => false,
-            Msg::Refresh => true,
+            Msg::Refresh => {
+                let canvas: HtmlCanvasElement = self.canvas_ref.cast().expect("Not html canvas element");
+                let rect = canvas.get_bounding_client_rect();
+                let error_margin =5;
+                if canvas.width() +error_margin < rect.width() as u32{
+                    canvas.set_width(rect.width() as u32);
+                }
+                if canvas.height() + error_margin < rect.height() as u32{
+                    canvas.set_height(rect.height() as u32);
+                }
+
+                true
+            },
             Msg::CanvasResize => {
                 self.resetcanvas();
                 true
