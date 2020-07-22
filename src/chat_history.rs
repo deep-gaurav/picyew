@@ -91,11 +91,12 @@ impl Component for ChatHistory {
     fn view(&self) -> Html {
         html! {
             <>
-                <div class="box" style="height:50vh;overflow:auto;">
+                <div class="has-text-centered">
+                <div class="box" style="display:inline-block;height:50vh;overflow:auto;">
 
                     <form onsubmit=self.link.callback(|f:FocusEvent|{f.prevent_default();Msg::SendChat})>
                     <div class="field has-addons">
-                        <div class="control is-expanded">
+                        <div class="control">
                             <input onsubmit=self.link.callback(|_|Msg::SendChat) ref=self.inputref.clone() class="input" type="text" placeholder="Type to Chat"/>
                         </div>
                         <div class="control">
@@ -107,11 +108,12 @@ impl Component for ChatHistory {
                         </div>
                     </div>
                     </form>
-                    <div>
+                    <div class="has-text-justified">
                         {
                             self.history.clone()
                         }
                     </div>
+                </div>
                 </div>
             </>
         }

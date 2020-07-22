@@ -160,7 +160,8 @@ impl Component for Home {
                 </div>
 
             </section>
-            <section class="section">
+            <section class="section has-text-centered">
+                <div class="container" style="display:inline-flex;">
                 <div class="box">
                     {
                         avatar(&self.name)
@@ -178,7 +179,7 @@ impl Component for Home {
                     <div class="container mt-2">
                         <fieldset disabled=self.name.is_empty() || self.is_connecting>
                         <div class="field has-addons">
-                            <div class="control is-expanded">
+                            <div class="control ">
                                 <input value=self.room_id.clone() oninput=self.link.callback(|msg:InputData|Msg::RoomIdChange(msg.value)) class="input" type="text" placeholder="Enter Room Id to join"/>
                             </div>
                             <div class="control">
@@ -195,6 +196,7 @@ impl Component for Home {
                         </div>
                         </fieldset>
                     </div>
+                </div>
                 </div>
             </section>
             </>
