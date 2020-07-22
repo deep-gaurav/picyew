@@ -285,7 +285,7 @@ impl Component for DrawWidget {
                 <>
                     <div style="">
                     
-                    <canvas style="box-sizing:context-box;border-color:black;border-style:solid;touch-action: none;width:100%;min-height:50vh;position:relative;cursor:none;" key="drawboard" onload=self.link.callback(|_|Msg::Setup)
+                    <canvas style="box-sizing:content-box;border-color:black;border-style:solid;touch-action: none;width:100%;min-height:50vh;position:relative;cursor:none;" key="drawboard" onload=self.link.callback(|_|Msg::Setup)
                         onmousedown=self.link.callback(|ev|Msg::MouseDown(ev))
                         onmouseup=self.link.callback(|ev|Msg::MouseUp(ev))
                         onmousemove=self.link.callback(|ev|Msg::MouseMove(ev))
@@ -449,7 +449,7 @@ impl Component for DrawWidget {
         else{
             html!{
                 <div>
-                <canvas style="box-sizing:context-box;border-color:black;border-style:solid;touch-action: none;width:100%;height:100%;min-height:50vh;position:relative;" key="drawboard" onload=self.link.callback(|_|Msg::Setup)
+                <canvas style="box-sizing:content-box;border-color:black;border-style:solid;touch-action: none;width:100%;height:100%;min-height:50vh;position:relative;" key="drawboard" onload=self.link.callback(|_|Msg::Setup)
 
                     onresize=self.link.callback(|_|Msg::CanvasResize)
 
