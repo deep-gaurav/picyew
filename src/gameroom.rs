@@ -119,7 +119,7 @@ impl Component for Game {
                                             </div>
                                         </div>
                                         <div class="card-content">
-                                            <div class="container">
+                                            <div class="container has-text-centered">
                                                 <div class="columns">
                                                     {
                                                         for words.iter().map(|word|{
@@ -150,7 +150,7 @@ impl Component for Game {
                                 html!{
                                     <div class="container has-text-centered my-2" style="letter-spacing:2px;">
                                         {
-                                            p.unwrap_or_default()
+                                            p.unwrap_or_default()+" is choosing the word"
                                         }
                                     </div>
                                 }
