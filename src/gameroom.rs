@@ -25,7 +25,8 @@ pub enum Msg {
     Ignore,
     PlayerJoin(Player),
     PlayerDisconnect(Player),
-    LeaderChange(State)
+    LeaderChange(State),
+    ChooseWord(String)
 }
 
 #[derive(Properties, Clone, Debug)]
@@ -79,6 +80,12 @@ impl Component for Game {
                 self.lobby.players.remove(&p.id);
                 true
             }
+            Msg::ChooseWord(word)=>{
+                self._socket_agent.send(
+                    AgentInput::Send(PlayerMessage::WordChosen(word))
+                );
+                true
+            }
         }
     }
 
@@ -96,12 +103,100 @@ impl Component for Game {
                 State::Lobby(_)=>vec![]
             }
         };
-        let word = {
+        let wordc = {
             match &self.lobby.state{
-                State::Game(_,pt)=>pt.word.clone(),
-                State::Lobby(_)=>String::default()
+                State::Game(leader,pt)=>{
+                    match &pt.word{
+                        WordState::ChoseWords(words)=>{
+                            if &self.selfid==leader{
+                                html!{
+                                    <div class="card">
+                                        <div class="card-heading">
+                                            <div class="card-header-title is-centered">
+                                                {
+                                                    "Choose Word"
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="card-content">
+                                            <div class="container">
+                                                <div class="columns">
+                                                    {
+                                                        for words.iter().map(|word|{
+                                                            let wordclone=word.clone();
+                                                            html!{
+                                                                <div class="column">
+                                                                    <button class="button is-normal is-outlined" onclick=self.link.callback(
+                                                                        move |_|Msg::ChooseWord(wordclone.clone())
+                                                                    )>
+                                                                        {
+                                                                            word.clone()
+                                                                        }
+                                                                    </button>
+                                                                </div>
+                                                            }
+                                                            }
+                                                        )
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            
+                            }
+                            else{
+                                let p = self.lobby.players.get(leader).and_then(|p|Some(p.name.clone()));
+                                html!{
+                                    <div class="container has-text-centered my-2" style="letter-spacing:2px;">
+                                        {
+                                            p.unwrap_or_default()
+                                        }
+                                    </div>
+                                }
+                            }
+                        }
+                        WordState::Word(word)=>{
+                            html!{
+                                <div class="container my-2 has-text-centered" style="letter-spacing:2px;">
+                                    {
+                                        if &self.selfid==leader{
+                                            
+                                            word.clone()
+                                            
+                                        }else{
+                                            WORD_HIDE_REGEX.replace_all(&word.clone(),"_").to_string()   
+                                        }
+                                        
+                                    }
+                                </div>
+                            }
+                        }
+                    }
+                },
+                State::Lobby(_)=> html!{}
             }
         }; 
+
+        let draw = {
+            match &self.lobby.state{
+                State::Lobby(_)=>false,
+                State::Game(leader,data)=>{
+                    if leader==&self.selfid{
+                        match &data.word{
+                            WordState::ChoseWords(_)=>{
+                                false
+                            }
+                            WordState::Word(_)=>true
+                            
+                        }
+                    }
+                    else{
+                        false
+                    }
+                }
+            }
+        };
         html! {
             <div class="section py-2">
             <div class="">
@@ -120,22 +215,13 @@ impl Component for Game {
                 })
             }
             </div>
-            <div class="container my-2 has-text-centered" style="letter-spacing:2px;">
-                {
-                    if self.selfid==leader{
-                        
-                        word.clone()
-                        
-                    }else{
-                        WORD_HIDE_REGEX.replace_all(&word.clone(),"_").to_string()   
-                    }
-                    
-                }
-            </div>
+            {
+                wordc
+            }
             <div class="columns">
                 <div class="column  is-three-quarters-widescreen">
                     <div key=leader.clone() style="">
-                        <DrawWidget draw=&leader==&self.selfid initialpoints=points />
+                        <DrawWidget draw=draw initialpoints=points />
                     </div>
                 </div>
 

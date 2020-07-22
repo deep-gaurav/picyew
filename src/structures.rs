@@ -27,9 +27,19 @@ use std::collections::HashSet;
 pub struct GameData{
     pub drawing:Vec<Point>,
     pub guessed:HashSet<String>,
-    pub word:String
+    pub word:WordState
 }
 
+#[derive(Debug, Deserialize,Clone)]
+pub enum WordState{
+    ChoseWords(Vec<String>),
+    Word(String)
+}
+impl Default for WordState {
+    fn default() -> Self {
+        WordState::ChoseWords(vec![])
+    }
+}
 
 use web_sys::*;
 impl Point {
@@ -102,9 +112,10 @@ impl std::fmt::Display for CloseCodes {
 }
 
 #[derive(Serialize,Deserialize,Debug)]
-pub enum PlayerMessage{
-    Initialize(String,String),
+pub enum PlayerMessage {
+    Initialize(String, String),
     JoinLobby(String),
+    WordChosen(String),
     CreateLobby,
     Ping,
 
@@ -112,7 +123,6 @@ pub enum PlayerMessage{
     StartGame,
 
     AddPoints(Vec<Point>),
-
 }
 
 #[derive(Debug,Deserialize,Clone)]
@@ -122,11 +132,11 @@ pub enum SocketMessage {
     PlayerDisconnected(Player),
     Close(CloseCodes),
 
-    Chat(String,String),
+    Chat(String, String),
     LeaderChange(State),
     GameStart(State),
 
     AddPoints(Vec<Point>),
 
-    Pong
+    Pong,
 }

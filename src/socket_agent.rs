@@ -198,6 +198,7 @@ impl SocketAgent {
     }
 
     fn send_socket_message(&self, data: &PlayerMessage) {
+        log::debug!("Send Message {:#?}",data);
         match &self.socket {
             Some(socket) => {
                 match bincode::serialize(&data){
