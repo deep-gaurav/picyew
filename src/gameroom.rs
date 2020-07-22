@@ -220,7 +220,7 @@ impl Component for Game {
             }
             <div class="columns">
                 <div class="column  is-three-quarters-widescreen">
-                    <div key=leader.clone() style="">
+                    <div key=leader.clone()+&draw.to_string() style="">
                         <DrawWidget draw=draw initialpoints=points />
                     </div>
                 </div>
