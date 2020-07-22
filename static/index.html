@@ -4,7 +4,8 @@
         <meta charset="utf-8" />
         <title>Pictionary</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="stylesheet" href="/bulma.min.css">
+        <link rel="stylesheet" href="/lumen.min.css">
+        <!-- <link rel="stylesheet" href="/bulma-prefers-dark.css"> -->
         <script>
             history.pushState = ( f => function pushState(){
                 var ret = f.apply(this, arguments);
@@ -24,6 +25,49 @@
                 window.dispatchEvent(new Event('locationchange'))
             });
         </script>
+        <style>
+            .loaderbg {
+                height: 100%;
+                width: 100%;
+                position: absolute;
+            }
+
+            .spinner {
+                position: relative;
+                display: block;
+
+                top: 50%;
+                /* left: 50%; */
+                transform: translate(0%,-50%);
+                width: 40px;
+                height: 40px;
+                margin: auto;
+                background-color: rgb(255, 255, 255);
+
+                border-radius: 100%;  
+                -webkit-animation: sk-scaleout 1.0s infinite ease-in-out;
+                animation: sk-scaleout 1.0s infinite ease-in-out;
+            }
+
+            @-webkit-keyframes sk-scaleout {
+                0% { -webkit-transform: scale(0) }
+                100% {
+                    -webkit-transform: scale(1.0);
+                    opacity: 0;
+                }
+            }
+
+            @keyframes sk-scaleout {
+                0% { 
+                    -webkit-transform: scale(0);
+                    transform: scale(0);
+                } 100% {
+                    -webkit-transform: scale(1.0);
+                    transform: scale(1.0);
+                    opacity: 0;
+                }
+            }
+        </style>
     </head>
     <body>
         <script>
@@ -32,7 +76,9 @@
             localStorage.setItem("player_id",id);
             window.get_uid = ()=>id.toString();
         </script>
-        <div id="approot"/>
+        <div class="loaderbg has-background-primary">
+            <div class="spinner"></div>
+        </div>
         <script src="/bundle.js" defer></script>
         <script type="text/javascript" id="matomo">
             var _paq = window._paq || [];

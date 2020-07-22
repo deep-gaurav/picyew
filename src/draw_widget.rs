@@ -223,6 +223,7 @@ impl Component for DrawWidget {
             Msg::SetSize(size) => {
                 self.current_width = size;
                 self.toolboxopen = ToolBoxOpen::None;
+                self.is_eraser=false;
                 true
             }
             Msg::ToggleEraser=>{
@@ -364,7 +365,16 @@ impl Component for DrawWidget {
                         <div class="level is-mobile">
     
                             <div class="level-left">
-                                <div class="level-item"
+                                <div class="tabs is-toggle is-toggle-rounded">
+                                <ul>
+                                <li class= {
+                                    if self.is_eraser{
+                                        ""
+                                    }else{
+                                        "is-active"
+                                    }
+                                }>
+                                <a
                                     onclick=self.link.callback(|_|Msg::SetToolBox(ToolBoxOpen::Brush))
                                 >
                                     <span class="icon">
@@ -372,8 +382,16 @@ impl Component for DrawWidget {
                                             brushsize(self.current_width,&self.current_color)
                                         }
                                     </span>
-                                </div>
-                                <div class="level-item"
+                                </a>
+                                </li>
+                                <li class= {
+                                    if !self.is_eraser{
+                                        ""
+                                    }else{
+                                        "is-active"
+                                    }
+                                }>
+                                <a class="level-item"
                                     onclick=self.link.callback(|_|Msg::ToggleEraser)
                                 >
                                     <span class="icon">
@@ -394,6 +412,9 @@ impl Component for DrawWidget {
                                         }
                                     }
                                     </span>
+                                </a>
+                                </li>
+                                </ul>
                                 </div>
                             </div>
     
@@ -402,18 +423,22 @@ impl Component for DrawWidget {
                                 <div class="level-item"
                                     onclick=self.link.callback(|_|Msg::ClearDoc)
                                 >
+                                    <div class="button is-rounded is-outlined">
                                     <span class="icon">
                                         <svg style="width:24px;height:24px" viewBox="0 0 24 24">
                                             <path fill="currentColor" d="M13,9V3.5L18.5,9M6,2C4.89,2 4,2.89 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2H6Z" />
                                         </svg>
                                     </span>
+                                    </div>
                                 </div>
                                 <div class="level-item"
                                 onclick=self.link.callback(|_|Msg::SetToolBox(ToolBoxOpen::Color))
                                 >
+                                    <div class="button is-rounded is-outlined">
                                     {
                                         colorpallet(&self.current_color)
                                     }
+                                    </div>
                                 </div>
                             </div>
                         </div>
