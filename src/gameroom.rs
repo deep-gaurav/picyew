@@ -5,7 +5,7 @@ use crate::socket_agent::*;
 use crate::draw_widget::DrawWidget;
 use crate::chat_history::ChatHistory;
 use crate::peer::PeerWidget;
-use itertools::Itertools;
+use crate::notification_agent::*;
 
 use lazy_static::lazy_static;
 
@@ -16,6 +16,7 @@ lazy_static! {
 
 pub struct Game {
     _socket_agent: Box<dyn yew::Bridge<SocketAgent>>,
+    notif_agent: Box<dyn yew::Bridge<NotificationAgent>>,
     lobby:Lobby,
     selfid:String,
     link:ComponentLink<Self>,
@@ -64,8 +65,12 @@ impl Component for Game {
             }
             _=>Msg::Ignore
         }));
+        let notif_agent = NotificationAgent::bridge(
+            _link.callback(|_|Msg::Ignore)
+        );
         Self {
             _socket_agent: agent,
+            notif_agent,
             lobby:_props.lobby,
             link:_link,
             selfid: _props.selfid

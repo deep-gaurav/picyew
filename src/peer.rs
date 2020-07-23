@@ -78,7 +78,7 @@ impl Component for PeerWidget {
         html! {
             <>
                 <div class="container has-text-centered">
-                    <div style=format!("display:inline-block;border-style:solid;border-radius:50%;border-color:{}",color)>
+                    <div style=format!("display:inline-block;border-width:5px;border-style:solid;border-radius:50%;border-color:{}",color)>
                     {
                         avatar(&self.peer.name)
                     }

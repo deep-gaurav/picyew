@@ -4,12 +4,15 @@ use yew_router::prelude::*;
 use crate::room::Room;
 use crate::gameroom::Game;
 use crate::home::Home;
+use crate::notification_widget::NotificationWidget;
+use crate::notification_agent::*;
 
 use crate::socket_agent::*;
 use crate::structures::*;
 
 pub struct App {
     _agent: Box<dyn yew::Bridge<SocketAgent>>,
+    notif_agent: Box<dyn yew::Bridge::<NotificationAgent>>,
     lobby:Option<Lobby>,
     selfid: String,
     link: ComponentLink<Self>,
@@ -21,6 +24,10 @@ pub enum Msg {
     Ping,
     LobbyJoined(String,Lobby),
     GameStart(Lobby),
+
+    Disconnected,
+    PlayerDisconnected(Player),
+    PlayerJoined(Player),
 }
 
 #[derive(Switch, Debug, Clone)]
@@ -41,7 +48,24 @@ impl Component for App {
     type Properties = ();
 
     fn create(_: Self::Properties, _link: ComponentLink<Self>) -> Self {
+        let mut notif_agent = NotificationAgent::bridge(
+            _link.callback(|_|Msg::Ignore)
+        );
         let agent = SocketAgent::bridge(_link.callback(|data| match data {
+            AgentOutput::SocketMessage(msg)=>{
+                match msg{
+                    SocketMessage::PlayerJoined(p)=>{
+                        Msg::PlayerJoined(p)
+                    }
+                    SocketMessage::PlayerDisconnected(p)=>{
+                        Msg::PlayerDisconnected(p)
+                    }
+                    _=>Msg::Ignore
+                }
+            }
+            AgentOutput::SocketDisconnected=>{
+                Msg::Disconnected
+            }
             _ => Msg::Ignore,
         }));
         let pinginterval = yew::services::IntervalService::spawn(std::time::Duration::from_secs(1),
@@ -52,6 +76,7 @@ impl Component for App {
             )
         );
         App { _agent: agent ,
+            notif_agent,
             lobby:None,
             link:_link,
             selfid:unsafe{crate::home::get_uid()},
@@ -80,6 +105,40 @@ impl Component for App {
             Msg::GameStart(lob)=>{
                 self.lobby=Some(lob);
                 true
+            }
+
+            Msg::Disconnected=>{
+                self.notif_agent.send(
+                    NotificationAgentInput::Notify(
+                        Notification{
+                            notification_type:NotificationType::Error,
+                            content:"Disconnected from server".to_string()
+                        }
+                    )
+                );
+                false
+            }
+            Msg::PlayerJoined(p)=>{
+                self.notif_agent.send(
+                    NotificationAgentInput::Notify(
+                        Notification{
+                            notification_type:NotificationType::Info,
+                            content:format!("{} joined",p.name)
+                        }
+                    )
+                );
+                false
+            }
+            Msg::PlayerDisconnected(p)=>{
+                self.notif_agent.send(
+                    NotificationAgentInput::Notify(
+                        Notification{
+                            notification_type:NotificationType::Warning,
+                            content:format!("{} left",p.name)
+                        }
+                    )
+                );
+                false
             }
         }
     }
@@ -129,6 +188,7 @@ impl Component for App {
                         }
                     })
                 />
+                <NotificationWidget/>
             </div>
         }
     }

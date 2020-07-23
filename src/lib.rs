@@ -10,6 +10,8 @@ mod room_mediator;
 mod socket_agent;
 mod gameroom;
 mod structures;
+mod notification_agent;
+mod notification_widget;
 
 use wasm_bindgen::prelude::*;
 
