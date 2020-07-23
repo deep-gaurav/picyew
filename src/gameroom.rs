@@ -52,6 +52,13 @@ impl Component for Game {
                     SocketMessage::LeaderChange(leader)=>{
                         Msg::LeaderChange(leader)
                     }
+                    SocketMessage::TimeUpdate(state)=>{
+                        // log::debug!("time update {:#?}",state);
+                        Msg::LeaderChange(state)
+                    }
+                    SocketMessage::ScoreChange(state)=>{
+                        Msg::LeaderChange(state)
+                    }
                     _=>Msg::Ignore
                 }
             }
@@ -99,13 +106,22 @@ impl Component for Game {
         
         let points = {
             match &self.lobby.state{
-                State::Game(_,pt)=>pt.drawing.clone(),
+                State::Game(_,_,pt)=>pt.drawing.clone(),
                 State::Lobby(_)=>vec![]
             }
         };
+        let time = {
+            match &self.lobby.state{
+                State::Lobby(_)=>0,
+                State::Game(_,_,data)=>{
+                    data.time
+                }
+            }
+        };
+
         let wordc = {
             match &self.lobby.state{
-                State::Game(leader,pt)=>{
+                State::Game(leader,_,pt)=>{
                     match &pt.word{
                         WordState::ChoseWords(words)=>{
                             if &self.selfid==leader{
@@ -181,7 +197,7 @@ impl Component for Game {
         let draw = {
             match &self.lobby.state{
                 State::Lobby(_)=>false,
-                State::Game(leader,data)=>{
+                State::Game(leader,_,data)=>{
                     if leader==&self.selfid{
                         match &data.word{
                             WordState::ChoseWords(_)=>{
@@ -197,6 +213,7 @@ impl Component for Game {
                 }
             }
         };
+        let state = self.lobby.state.clone();
         html! {
             <div class="section py-2">
             <div class="">
@@ -210,11 +227,25 @@ impl Component for Game {
             {
                 for self.lobby.players.iter().map(|p|html!{
                     <div class="column">
-                    <PeerWidget key=format!("{:#?}",p) peer=p.1.clone()/>
+                    <PeerWidget key=format!("{:#?}",p) state=state.clone() peer=p.1.clone()/>
                     </div>
                 })
             }
             </div>
+            
+            <div class="container has-text-centered my-2" style="letter-spacing:2px;">
+                <span class="icon">
+                    <svg style="width:24px;height:24px" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M19.03 7.39L20.45 5.97C20 5.46 19.55 5 19.04 4.56L17.62 6C16.07 4.74 14.12 4 12 4C7.03 4 3 8.03 3 13S7.03 22 12 22C17 22 21 17.97 21 13C21 10.88 20.26 8.93 19.03 7.39M13 14H11V7H13V14M15 1H9V3H15V1Z" />
+                    </svg>
+                </span>
+                <span>
+                {
+                    time.to_string()
+                }
+                </span>
+            </div>
+            
             {
                 wordc
             }

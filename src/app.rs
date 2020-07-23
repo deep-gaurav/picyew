@@ -114,7 +114,7 @@ impl Component for App {
                                                 <Room gamestartcb=link.callback(|lob|Msg::GameStart(lob)) selfid=selfid lobby=lobby />
                                             }
                                         }
-                                        State::Game(id,_)=>{
+                                        State::Game(id,_,_)=>{
                                             html!{
                                                 <Game selfid=selfid lobby=lobby />
                                             }

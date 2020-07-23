@@ -12,28 +12,35 @@ pub struct Lobbies {
 pub struct Lobby {
     pub id: String,
     pub players: HashMap<String, Player>,
-    pub state:State
+    pub state:State,
+    pub draw_time: u32,
 }
 
 
 #[derive(Debug,Deserialize,Clone)]
 pub enum State{
     Lobby(String),
-    Game(String,GameData)
+    Game(String,Scores, GameData),
 }
 
 use std::collections::HashSet;
 #[derive(Debug,Deserialize,Clone,Default)]
 pub struct GameData{
-    pub drawing:Vec<Point>,
-    pub guessed:HashSet<String>,
-    pub word:WordState
+    pub drawing: Vec<Point>,
+    pub guessed: HashSet<String>,
+    pub time: u32,
+    pub word: WordState,
+}
+
+#[derive(Debug, Deserialize, Clone, Default)]
+pub struct Scores{
+    pub scores: HashMap<String,u32>
 }
 
 #[derive(Debug, Deserialize,Clone)]
 pub enum WordState{
     ChoseWords(Vec<String>),
-    Word(String)
+    Word(String),
 }
 impl Default for WordState {
     fn default() -> Self {
@@ -79,7 +86,7 @@ impl State {
     pub fn leader(&self)->&str{
         match &self{
             State::Lobby(id)=>id,
-            State::Game(id,_)=>id
+            State::Game(id,_,_)=>id
         }
     }
 }
@@ -134,6 +141,9 @@ pub enum SocketMessage {
 
     Chat(String, String),
     LeaderChange(State),
+    ScoreChange(State),
+    TimeUpdate(State),
+
     GameStart(State),
 
     AddPoints(Vec<Point>),

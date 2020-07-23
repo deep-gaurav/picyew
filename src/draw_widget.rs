@@ -58,6 +58,8 @@ pub enum Msg {
     SetColor(String),
     SetSize(u32),
     ToggleEraser,
+    SetEraser,
+    SetBrush,
 
     ClearDoc,
 
@@ -223,12 +225,19 @@ impl Component for DrawWidget {
             Msg::SetSize(size) => {
                 self.current_width = size;
                 self.toolboxopen = ToolBoxOpen::None;
-                self.is_eraser=false;
                 true
             }
             Msg::ToggleEraser=>{
                 self.is_eraser=!self.is_eraser;
                 true
+            }
+            Msg::SetEraser=>{
+                self.is_eraser=true;
+                true
+            }
+            Msg::SetBrush=>{
+                self.is_eraser=false;
+                false
             }
             Msg::ClearDoc =>{
                 self.points.clear();
@@ -375,12 +384,12 @@ impl Component for DrawWidget {
                                     }
                                 }>
                                 <a
-                                    onclick=self.link.callback(|_|Msg::SetToolBox(ToolBoxOpen::Brush))
+                                    onclick=self.link.callback(|_|Msg::SetBrush)
                                 >
                                     <span class="icon">
-                                        {
-                                            brushsize(self.current_width,&self.current_color)
-                                        }
+                                        <svg style=format!("width:24px;height:24px") viewBox=format!("0 0 24 24")>
+                                            <path fill="currentColor" d="M20.71,4.63L19.37,3.29C19,2.9 18.35,2.9 17.96,3.29L9,12.25L11.75,15L20.71,6.04C21.1,5.65 21.1,5 20.71,4.63M7,14A3,3 0 0,0 4,17C4,18.31 2.84,19 2,19C2.92,20.22 4.5,21 6,21A4,4 0 0,0 10,17A3,3 0 0,0 7,14Z" />
+                                        </svg>
                                     </span>
                                 </a>
                                 </li>
@@ -392,7 +401,7 @@ impl Component for DrawWidget {
                                     }
                                 }>
                                 <a class="level-item"
-                                    onclick=self.link.callback(|_|Msg::ToggleEraser)
+                                    onclick=self.link.callback(|_|Msg::SetEraser)
                                 >
                                     <span class="icon">
                                     {
@@ -419,11 +428,21 @@ impl Component for DrawWidget {
                             </div>
     
                             <div class="level-right">
-    
+                                <div class="level-item"
+                                    onclick=self.link.callback(|_|Msg::SetToolBox(ToolBoxOpen::Brush))
+                                >
+                                    <div class="button is-outlined">
+                                    <span class="icon">
+                                        {
+                                            brushsize(self.current_width,&self.current_color)
+                                        }
+                                    </span>
+                                    </div>
+                                </div>
                                 <div class="level-item"
                                     onclick=self.link.callback(|_|Msg::ClearDoc)
                                 >
-                                    <div class="button is-rounded is-outlined">
+                                    <div class="button is-outlined">
                                     <span class="icon">
                                         <svg style="width:24px;height:24px" viewBox="0 0 24 24">
                                             <path fill="currentColor" d="M13,9V3.5L18.5,9M6,2C4.89,2 4,2.89 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2H6Z" />
@@ -434,7 +453,7 @@ impl Component for DrawWidget {
                                 <div class="level-item"
                                 onclick=self.link.callback(|_|Msg::SetToolBox(ToolBoxOpen::Color))
                                 >
-                                    <div class="button is-rounded is-outlined">
+                                    <div class="button is-outlined">
                                     {
                                         colorpallet(&self.current_color)
                                     }
@@ -475,12 +494,7 @@ fn brushsize(size: u32, color: &str) -> Html {
     let size = size;
     html! {
         <>
-        <span class="icon">
-            <svg style=format!("width:24px;height:24px") viewBox=format!("0 0 24 24")>
-                <path fill="currentColor" d="M20.71,4.63L19.37,3.29C19,2.9 18.35,2.9 17.96,3.29L9,12.25L11.75,15L20.71,6.04C21.1,5.65 21.1,5 20.71,4.63M7,14A3,3 0 0,0 4,17C4,18.31 2.84,19 2,19C2.92,20.22 4.5,21 6,21A4,4 0 0,0 10,17A3,3 0 0,0 7,14Z" />
-            </svg>
-        </span>
-        <div style=format!("width:{}px;height:{}px;background-color:{};",size,size,color)>
+        <div style=format!("width:{}px;height:{}px;background-color:{};border-radius:50%;",size,size,color)>
         </div>
         </>
 

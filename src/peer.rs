@@ -5,6 +5,7 @@ use crate::socket_agent::*;
 
 pub struct PeerWidget {
     _socket_agent: Box<dyn yew::Bridge<SocketAgent>>,
+    state: State,
     peer: Player,
 }
 
@@ -15,6 +16,7 @@ pub enum Msg {
 #[derive(Properties, Clone, Debug)]
 pub struct Props {
     pub peer: Player,
+    pub state: State,
 }
 
 impl Component for PeerWidget {
@@ -29,6 +31,7 @@ impl Component for PeerWidget {
         Self {
             _socket_agent: agent,
             peer: _props.peer,
+            state: _props.state
         }
     }
 
@@ -39,20 +42,40 @@ impl Component for PeerWidget {
     }
 
     fn change(&mut self, _props: Self::Properties) -> ShouldRender {
-        false
+        self.state=_props.state;
+        self.peer=_props.peer;
+        true
     }
 
     fn view(&self) -> Html {
         use crate::avatar::avatar;
+        let score = {
+            match &self.state{
+                State::Lobby(_)=>html!{},
+                State::Game(leader,score,data)=>{
+                    let score = score.scores.get(&self.peer.id).unwrap_or(&0).to_string();
+                    html!{
+                        score
+                    }
+                }
+            }
+        };
         html! {
             <>
                 <div class="container has-text-centered">
                     {
                         avatar(&self.peer.name)
                     }
+                    <div>
                     {
                         &self.peer.name
                     }
+                    </div>
+                    <div>
+                    {
+                        score
+                    }
+                    </div>
                 </div>
             </>
         }
