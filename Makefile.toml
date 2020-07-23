@@ -42,7 +42,7 @@ dependencies = [ "create_wasm", "bundle_rollup"]
 
 [tasks.copy_to_dist]
 script = [
-    "cp static/* dist/",
+    "cp -r static/* dist/",
     "cp pkg/bundle.js dist/",
     "cp pkg/package_bg.wasm dist/"
 ]

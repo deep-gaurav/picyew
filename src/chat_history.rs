@@ -9,6 +9,9 @@ pub struct ChatHistory {
     history: Html,
     link: ComponentLink<Self>,
     inputref: NodeRef,
+
+    chataudio: NodeRef,
+    successaudio: NodeRef,
 }
 
 pub enum Msg {
@@ -42,6 +45,9 @@ impl Component for ChatHistory {
             history: html! {},
             link: _link,
             inputref: NodeRef::default(),
+
+            chataudio: NodeRef::default(),
+            successaudio: NodeRef::default(),
         }
     }
 
@@ -49,6 +55,8 @@ impl Component for ChatHistory {
         match _msg {
             Msg::Ignore => false,
             Msg::AddChat(name,chat)=>{
+                let chatel:web_sys::HtmlAudioElement = self.chataudio.cast().expect("Not audioelement");
+                chatel.play();
                 self.history = html! {
                     <>
                         <span style=format!("color:{}",getavatarcolor(&name))>
@@ -91,6 +99,7 @@ impl Component for ChatHistory {
     fn view(&self) -> Html {
         html! {
             <>
+                <audio ref=self.chataudio.clone() hidden=true src="/sounds/Sharp.ogg" />
                 <div class="has-text-centered">
                 <div class="box" style="display:inline-block;height:50vh;overflow:auto;">
 

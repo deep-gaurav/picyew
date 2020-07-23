@@ -15,6 +15,6 @@ wasm-pack build --target web --out-name package
 rollup ./main.js --format iife --file ./pkg/bundle.js
 
 mkdir -p dist
-cp static/* dist/
+cp -r static/* dist/
 cp pkg/bundle.js dist/
 cp pkg/package_bg.wasm dist/
