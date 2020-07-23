@@ -60,12 +60,29 @@ impl Component for PeerWidget {
                 }
             }
         };
+        let color = {
+            match &self.state{
+                State::Lobby(_)=>"transparent",
+                State::Game(leader,_,data)=>{
+                    if &self.peer.id == leader{
+                        "blue"
+                    }
+                    else if data.guessed.contains(&self.peer.id){
+                        "green"
+                    }else{
+                        "black"
+                    }
+                }
+            }
+        };
         html! {
             <>
                 <div class="container has-text-centered">
+                    <div style=format!("display:inline-block;border-style:solid;border-radius:50%;border-color:{}",color)>
                     {
                         avatar(&self.peer.name)
                     }
+                    </div>
                     <div>
                     {
                         &self.peer.name
