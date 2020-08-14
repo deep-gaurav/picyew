@@ -446,8 +446,8 @@ impl Component for DrawWidget {
                                 </div>
                             </div>
     
-                            <div class="level-right">
-                                <div class="level-item"
+                            <div class="level-right columns is-gapless is-mobile">
+                                <div class="column"
                                     onclick=self.link.callback(|_|Msg::SetToolBox(ToolBoxOpen::Brush))
                                 >
                                     <div class="button is-outlined">
@@ -458,7 +458,7 @@ impl Component for DrawWidget {
                                     </span>
                                     </div>
                                 </div>
-                                <div class="level-item"
+                                <div class="column"
                                     onclick=self.link.callback(|_|Msg::Undo)
                                 >
                                     <div class="button is-outlined">
@@ -467,7 +467,7 @@ impl Component for DrawWidget {
                                         }
                                     </div>
                                 </div>
-                                <div class="level-item"
+                                <div class="column"
                                     onclick=self.link.callback(|_|Msg::ClearDoc)
                                 >
                                     <div class="button is-outlined">
@@ -476,7 +476,7 @@ impl Component for DrawWidget {
                                         }
                                     </div>
                                 </div>
-                                <div class="level-item"
+                                <div class="column"
                                 onclick=self.link.callback(|_|Msg::SetToolBox(ToolBoxOpen::Color))
                                 >
                                     <div class="button is-outlined">
