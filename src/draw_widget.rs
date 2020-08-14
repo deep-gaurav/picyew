@@ -15,6 +15,7 @@ pub struct DrawWidget {
     link: ComponentLink<Self>,
     context: Option<CanvasRenderingContext2d>,
     points: Vec<Point>,
+    undosequence: Vec<Point>,
     todraw: Vec<Point>,
     tosend: Vec<Point>,
     pressed: bool,
@@ -62,6 +63,7 @@ pub enum Msg {
     SetBrush,
 
     ClearDoc,
+    Undo,
 
     SendData,
     SetData(Vec<Point>)
@@ -115,6 +117,7 @@ impl Component for DrawWidget {
             link: _link,
             context: None,
             points: _props.initialpoints.clone(),
+            undosequence: vec![],
             todraw: vec![],
             tosend: vec![],
             pressed: false,
@@ -268,9 +271,25 @@ impl Component for DrawWidget {
                 false
             }
             Msg::SetData(mut data)=>{
+                if let Some(firstrcv)=data.first(){
+                    if let Some(lastp)=self.points.last(){
+                        if lastp.id>firstrcv.id{
+                            while let Some(p)=self.points.pop(){
+                                if p.id<=firstrcv.id{
+                                    break;
+                                }
+                            }
+                            self.resetcanvas();
+                        }
+                    }
+                }
                 self.points.append(&mut data.clone());
                 self.todraw.append(&mut data);
                 self.draw();
+                false
+            }
+            Msg::Undo=>{
+                self.undo();
                 false
             }
         }
@@ -440,14 +459,21 @@ impl Component for DrawWidget {
                                     </div>
                                 </div>
                                 <div class="level-item"
+                                    onclick=self.link.callback(|_|Msg::Undo)
+                                >
+                                    <div class="button is-outlined">
+                                        {
+                                            undoicon()
+                                        }
+                                    </div>
+                                </div>
+                                <div class="level-item"
                                     onclick=self.link.callback(|_|Msg::ClearDoc)
                                 >
                                     <div class="button is-outlined">
-                                    <span class="icon">
-                                        <svg style="width:24px;height:24px" viewBox="0 0 24 24">
-                                            <path fill="currentColor" d="M13,9V3.5L18.5,9M6,2C4.89,2 4,2.89 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2H6Z" />
-                                        </svg>
-                                    </span>
+                                        {
+                                            cleardocicon()
+                                        }
                                     </div>
                                 </div>
                                 <div class="level-item"
@@ -501,6 +527,26 @@ fn brushsize(size: u32, color: &str) -> Html {
     }
 }
 
+fn undoicon() -> Html{
+    html!{
+        <span class="icon">
+            <svg style="width:24px;height:24px" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M12.5,8C9.85,8 7.45,9 5.6,10.6L2,7V16H11L7.38,12.38C8.77,11.22 10.54,10.5 12.5,10.5C16.04,10.5 19.05,12.81 20.1,16L22.47,15.22C21.08,11.03 17.15,8 12.5,8Z" />
+            </svg>
+        </span>
+    }
+}
+
+fn cleardocicon()->Html{
+    html!{
+        <span class="icon">
+            <svg style="width:24px;height:24px" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M13,9V3.5L18.5,9M6,2C4.89,2 4,2.89 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2H6Z" />
+            </svg>
+        </span>
+    }
+}
+
 impl DrawWidget {
     fn initcanvas(&mut self) {
         log::debug!("Load context");
@@ -524,6 +570,23 @@ impl DrawWidget {
         self.draw(); 
     }
 
+    fn setstroke_point(&mut self,point:&Point){
+        self.undosequence.push(point.clone());
+        self.set_point(point);
+    }
+
+    fn undo(&mut self){
+        let laststart = self.undosequence.pop();
+        if let Some(lastpoint)=laststart{
+            while let Some(point)=self.points.pop(){
+                if point.id<=lastpoint.id{
+                    break;
+                }
+            }
+        }
+        self.resetcanvas();
+    }
+
     fn mousedown(&mut self, event: MouseEvent) {
         if let Some(context) = &self.context {
             let canvas: HtmlCanvasElement =
@@ -544,7 +607,7 @@ impl DrawWidget {
 
             self.pressed = true;
 
-            self.set_point(&point);
+            self.setstroke_point(&point);
 
         } else {
             log::warn!("Context not ready, not drawing");
@@ -713,7 +776,7 @@ impl DrawWidget {
                 eraser:self.is_eraser
             };
 
-            self.set_point(&point);
+            self.setstroke_point(&point);
 
 
             self.pressed = true;

@@ -68,9 +68,13 @@
                 }
             }
         </style>
+
     </head>
     <body>
+        <script src="https://unpkg.com/@popperjs/core@2"></script>
+        <script src="https://unpkg.com/tippy.js@6"></script>
         <script>
+            tippy.setDefaultProps({delay: 50});
             let t = + new Date();
             let id = localStorage.getItem("player_id") || btoa(t.toString());
             localStorage.setItem("player_id",id);
