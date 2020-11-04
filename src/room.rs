@@ -6,12 +6,14 @@ use crate::socket_agent::*;
 use crate::structures::*;
 
 use crate::app::{go_to_route, AppRoute};
+use gloo::events::EventListener;
 
 pub struct Room {
     _socket_agent: Box<dyn yew::Bridge<SocketAgent>>,
     link: ComponentLink<Self>,
     lobby: Lobby,
     selfid: String,
+
     gamestartcb: Callback<Lobby>,
 }
 
