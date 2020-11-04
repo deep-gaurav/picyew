@@ -111,7 +111,7 @@ impl Component for ChatHistory {
             }
             Msg::ReceivedAudio(id, chnk) => {
                 self.audiocache.push(chnk);
-                if self.audiocache.len()>6{
+                if self.audiocache.len()>3{
                     self.audiocache.remove(0);
                 }
 
@@ -144,7 +144,7 @@ impl Component for ChatHistory {
                     Ok(recorder) => {
                         let recorder: MediaRecorder = recorder;
                         let interval_task = IntervalService::spawn(
-                            std::time::Duration::from_millis(500),
+                            std::time::Duration::from_millis(1000),
                             self.link.callback(|_| Msg::RecordCheck),
                         );
                         let link_clone = self.link.clone();
