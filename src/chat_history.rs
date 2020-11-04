@@ -119,6 +119,7 @@ impl Component for ChatHistory {
                     let listener = EventListener::new(&audel, "ended", move |ev| {
                         link_clone.send_message(Msg::AudEnded);
                     });
+                    self.audlistener = Some(listener);
                     self.link.send_message(Msg::AudEnded);
                 }else if audel.paused(){
                     self.link.send_message(Msg::AudEnded);
@@ -289,8 +290,9 @@ async fn get_audio_stream() -> Result<JsValue, JsValue> {
     let mediadevices: MediaDevices = navigator.media_devices()?;
     let mut constraints = MediaStreamConstraints::new();
     let mut trackcostraint = web_sys::MediaTrackConstraints::new();
-    trackcostraint.auto_gain_control(&JsValue::from_bool(true));
+    trackcostraint.auto_gain_control(&JsValue::from_bool(false));
     trackcostraint.noise_suppression(&JsValue::from_bool(true));
+    trackcostraint.echo_cancellation(&JsValue::from_bool(true));
     constraints.audio(&trackcostraint);
     let stream = mediadevices.get_user_media_with_constraints(&constraints)?;
     let futu = wasm_bindgen_futures::JsFuture::from(stream).await?;
