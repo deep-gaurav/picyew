@@ -111,6 +111,9 @@ impl Component for ChatHistory {
             }
             Msg::ReceivedAudio(id, chnk) => {
                 self.audiocache.push(chnk);
+                if self.audiocache.len()>6{
+                    self.audiocache.remove(0);
+                }
 
                 let audel: web_sys::HtmlAudioElement =
                 self.audioref.cast().expect("Not audioelement");
@@ -141,7 +144,7 @@ impl Component for ChatHistory {
                     Ok(recorder) => {
                         let recorder: MediaRecorder = recorder;
                         let interval_task = IntervalService::spawn(
-                            std::time::Duration::from_millis(500),
+                            std::time::Duration::from_millis(1000),
                             self.link.callback(|_| Msg::RecordCheck),
                         );
                         let link_clone = self.link.clone();
