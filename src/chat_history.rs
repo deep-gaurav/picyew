@@ -288,7 +288,10 @@ async fn get_audio_stream() -> Result<JsValue, JsValue> {
     let navigator: Navigator = yew::utils::window().navigator();
     let mediadevices: MediaDevices = navigator.media_devices()?;
     let mut constraints = MediaStreamConstraints::new();
-    constraints.audio(&JsValue::from_bool(true));
+    let mut trackcostraint = web_sys::MediaTrackConstraints::new();
+    trackcostraint.auto_gain_control(&JsValue::from_bool(true));
+    trackcostraint.noise_suppression(&JsValue::from_bool(true));
+    constraints.audio(&trackcostraint);
     let stream = mediadevices.get_user_media_with_constraints(&constraints)?;
     let futu = wasm_bindgen_futures::JsFuture::from(stream).await?;
     Ok(futu)

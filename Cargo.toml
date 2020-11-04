@@ -72,5 +72,6 @@ features = [
   'Url',
   'FileReaderSync',
   'BlobPropertyBag',
-  'MediaRecorderOptions'
+  'MediaRecorderOptions',
+  'MediaTrackConstraints'
 ]
