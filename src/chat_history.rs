@@ -112,13 +112,15 @@ impl Component for ChatHistory {
             Msg::ReceivedAudio(id, chnk) => {
                 self.audiocache.push(chnk);
 
+                let audel: web_sys::HtmlAudioElement =
+                self.audioref.cast().expect("Not audioelement");
                 if let None = self.audlistener {
-                    let audel: web_sys::HtmlAudioElement =
-                        self.audioref.cast().expect("Not audioelement");
                     let link_clone = self.link.clone();
                     let listener = EventListener::new(&audel, "ended", move |ev| {
                         link_clone.send_message(Msg::AudEnded);
                     });
+                    self.link.send_message(Msg::AudEnded);
+                }else if audel.paused(){
                     self.link.send_message(Msg::AudEnded);
                 }
                 false
@@ -128,8 +130,11 @@ impl Component for ChatHistory {
                 log::info!("Media stream created {:#?}", stream);
                 let mut options = web_sys::MediaRecorderOptions::new();
                 options.mime_type("audio/webm");
-                let recorder = MediaRecorder::new_with_media_stream_and_media_recorder_options(
-                    &stream, &options,
+                // let recorder = MediaRecorder::new_with_media_stream_and_media_recorder_options(
+                //     &stream, &options,
+                // );
+                let recorder = MediaRecorder::new_with_media_stream(
+                    &stream, 
                 );
                 match recorder {
                     Ok(recorder) => {
