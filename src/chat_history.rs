@@ -144,7 +144,7 @@ impl Component for ChatHistory {
                     Ok(recorder) => {
                         let recorder: MediaRecorder = recorder;
                         let interval_task = IntervalService::spawn(
-                            std::time::Duration::from_millis(1000),
+                            std::time::Duration::from_millis(500),
                             self.link.callback(|_| Msg::RecordCheck),
                         );
                         let link_clone = self.link.clone();
