@@ -1,9 +1,7 @@
 use yew::prelude::*;
 
 use crate::avatar::avatar;
-use crate::socket_agent::{
-    AgentInput, AgentOutput, SocketAgent
-};
+use crate::socket_agent::{AgentInput, AgentOutput, SocketAgent};
 use crate::structures::*;
 use lazy_static::lazy_static;
 
@@ -19,21 +17,20 @@ pub struct Home {
     link: ComponentLink<Self>,
     is_connecting: bool,
     socket_agent: Box<dyn yew::Bridge<SocketAgent>>,
-    props:Props
+    props: Props,
 }
 
-#[derive(Debug,Properties,Clone)]
-pub struct Props{
-    pub lobbyjoinedcb:Callback<(String,Lobby)>,
-    pub prefillroomid:String
+#[derive(Debug, Properties, Clone)]
+pub struct Props {
+    pub lobbyjoinedcb: Callback<(String, Lobby)>,
+    pub prefillroomid: String,
 }
-
 
 use wasm_bindgen::prelude::*;
 #[wasm_bindgen]
-extern "C"{
+extern "C" {
     #[wasm_bindgen(js_namespace = window)]
-    pub fn get_uid()->String;
+    pub fn get_uid() -> String;
 }
 
 pub enum Msg {
@@ -53,19 +50,15 @@ impl Component for Home {
 
     fn create(_props: Self::Properties, _link: ComponentLink<Self>) -> Self {
         let agent = SocketAgent::bridge(_link.callback(|data| match data {
-            AgentOutput::SocketConnected=>Msg::Connected,
-            
-            AgentOutput::SocketMessage(msg) => {
-                match msg{
-                    SocketMessage::LobbyJoined(lobby) => {
-                        Msg::LobbyJoined(lobby)
-                    }
-                    SocketMessage::Close(_) => {Msg::Disconnected},
-                    _ => Msg::Ignore
-                }
-            }
-            AgentOutput::SocketDisconnected => {Msg::Disconnected}
-            AgentOutput::SocketErrorConnecting => {Msg::ErrorConnecting}
+            AgentOutput::SocketConnected => Msg::Connected,
+
+            AgentOutput::SocketMessage(msg) => match msg {
+                SocketMessage::LobbyJoined(lobby) => Msg::LobbyJoined(lobby),
+                SocketMessage::Close(_) => Msg::Disconnected,
+                _ => Msg::Ignore,
+            },
+            AgentOutput::SocketDisconnected => Msg::Disconnected,
+            AgentOutput::SocketErrorConnecting => Msg::ErrorConnecting,
         }));
         Home {
             name: "".to_string(),
@@ -73,7 +66,7 @@ impl Component for Home {
             link: _link,
             socket_agent: agent,
             is_connecting: false,
-            props:_props
+            props: _props,
         }
     }
 
@@ -93,35 +86,26 @@ impl Component for Home {
                 } else {
                     self.is_connecting = true;
                     self.socket_agent
-                        .send(
-                            AgentInput::Connect(SIGNAL_URL.to_string())
-                        );
+                        .send(AgentInput::Connect(SIGNAL_URL.to_string()));
                     true
                 }
             }
             Msg::Connected => {
-                let uid = unsafe {get_uid()};
-                log::info!("uid is {:#?}",uid);
+                let uid = unsafe { get_uid() };
+                log::info!("uid is {:#?}", uid);
                 self.socket_agent
-                    .send(
-                        AgentInput::Send(
-                            PlayerMessage::Initialize(
-                                uid,self.name.to_string()
-                            )
-                        )
-                    );
-                if self.room_id.is_empty(){
-                    self.socket_agent.send(
-                        AgentInput::Send(
-                            PlayerMessage::CreateLobby
-                        )
-                    );
-                }else{
-                    self.socket_agent.send(
-                        AgentInput::Send(
-                            PlayerMessage::JoinLobby(self.room_id.clone())
-                        )
-                    );
+                    .send(AgentInput::Send(PlayerMessage::Initialize(
+                        uid,
+                        self.name.to_string(),
+                    )));
+                if self.room_id.is_empty() {
+                    self.socket_agent
+                        .send(AgentInput::Send(PlayerMessage::CreateLobby));
+                } else {
+                    self.socket_agent
+                        .send(AgentInput::Send(PlayerMessage::JoinLobby(
+                            self.room_id.clone(),
+                        )));
                 }
                 false
             }
@@ -137,8 +121,8 @@ impl Component for Home {
                 crate::app::go_to_route(yew_router::route::Route::from(
                     crate::app::AppRoute::Room(lob.id.clone()),
                 ));
-                let uid = unsafe {get_uid()};
-                self.props.lobbyjoinedcb.emit((uid,lob));
+                let uid = unsafe { get_uid() };
+                self.props.lobbyjoinedcb.emit((uid, lob));
                 true
             }
             Msg::Ignore => false,

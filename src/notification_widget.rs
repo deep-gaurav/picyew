@@ -1,64 +1,52 @@
 use yew::prelude::*;
 
 use crate::notification_agent::*;
-use yew::services::timeout::{TimeoutService,TimeoutTask};
+use yew::services::timeout::{TimeoutService, TimeoutTask};
 
-pub struct NotificationWidget{
+pub struct NotificationWidget {
     link: ComponentLink<Self>,
     notif_agent: Box<dyn yew::Bridge<NotificationAgent>>,
-    notifs:Vec<(Notification,TimeoutTask)>
+    notifs: Vec<(Notification, TimeoutTask)>,
 }
 
-pub enum Msg{
+pub enum Msg {
     AddNotif(Notification),
     RemoveNotif(Notification),
 }
 
-#[derive(Properties,Clone)]
-pub struct Props{
+#[derive(Properties, Clone)]
+pub struct Props {}
 
-}
-
-impl Component for NotificationWidget{
-
+impl Component for NotificationWidget {
     type Message = Msg;
     type Properties = Props;
 
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
-        let mut agent = NotificationAgent::bridge(
-            link.callback(
-                |data|{
-                    match data{
-                        NotificationAgentOutput::Notify(notif)=>{
-                            Msg::AddNotif(
-                                notif
-                            )
-                        }
-                    }
+        let mut agent = NotificationAgent::bridge(link.callback(|data| match data {
+            NotificationAgentOutput::Notify(notif) => Msg::AddNotif(notif),
+        }));
 
-                }
-            )
-        );
-
-        Self{
+        Self {
             link,
-            notif_agent:agent,
-            notifs:vec![]
+            notif_agent: agent,
+            notifs: vec![],
         }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
-        match msg{
-            Msg::AddNotif(notif)=>{
+        match msg {
+            Msg::AddNotif(notif) => {
                 let notifc = notif.clone();
-                let endt = TimeoutService::spawn(std::time::Duration::from_secs(3),self.link.callback(
-                    move |_|Msg::RemoveNotif(notifc.clone())
-                ));
-                self.notifs.push((notif,endt));
+                let endt = TimeoutService::spawn(
+                    std::time::Duration::from_secs(3),
+                    self.link
+                        .callback(move |_| Msg::RemoveNotif(notifc.clone())),
+                );
+                self.notifs.push((notif, endt));
                 true
             }
-            Msg::RemoveNotif(notif)=>{
-                if let Some(pos)=self.notifs.iter().position(|f|f.0==notif){
+            Msg::RemoveNotif(notif) => {
+                if let Some(pos) = self.notifs.iter().position(|f| f.0 == notif) {
                     self.notifs.remove(pos);
                 }
                 true
@@ -96,7 +84,7 @@ impl Component for NotificationWidget{
             }
         );
 
-        html!{
+        html! {
             <div style="position:fixed;bottom:10px;z-index:2000;">
             {
                 for notifs
@@ -104,5 +92,4 @@ impl Component for NotificationWidget{
             </div>
         }
     }
-
 }

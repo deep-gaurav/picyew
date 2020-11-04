@@ -3,8 +3,8 @@ use yew::prelude::*;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
-use crate::structures::*;
 use crate::socket_agent::*;
+use crate::structures::*;
 
 use web_sys::*;
 
@@ -25,7 +25,7 @@ pub struct DrawWidget {
     is_eraser: bool,
     send_interval: yew::services::interval::IntervalTask,
     refresh_interval: yew::services::interval::IntervalTask,
-    props:Props
+    props: Props,
 }
 
 pub enum ToolBoxOpen {
@@ -34,7 +34,6 @@ pub enum ToolBoxOpen {
     Color,
     None,
 }
-
 
 pub enum Msg {
     Ignore,
@@ -66,13 +65,13 @@ pub enum Msg {
     Undo,
 
     SendData,
-    SetData(Vec<Point>)
+    SetData(Vec<Point>),
 }
 
 #[derive(Properties, Clone, Debug)]
 pub struct Props {
-    pub draw:bool,
-    pub initialpoints:Vec<Point>
+    pub draw: bool,
+    pub initialpoints: Vec<Point>,
 }
 
 impl Component for DrawWidget {
@@ -83,32 +82,25 @@ impl Component for DrawWidget {
         log::info!("new Drawboard created");
         let draw = _props.draw;
         let agent = SocketAgent::bridge(_link.callback(move |data| match data {
-            AgentOutput::SocketMessage(msg)=>match msg{
-                SocketMessage::AddPoints(pts)=>{
-                    if draw{
-                       Msg::Ignore
-                    }
-                    else{
+            AgentOutput::SocketMessage(msg) => match msg {
+                SocketMessage::AddPoints(pts) => {
+                    if draw {
+                        Msg::Ignore
+                    } else {
                         Msg::SetData(pts)
                     }
-                },
-                _=>Msg::Ignore
-            }
-            _=>Msg::Ignore
+                }
+                _ => Msg::Ignore,
+            },
+            _ => Msg::Ignore,
         }));
-        let interval = yew::services::IntervalService::spawn(std::time::Duration::from_millis(100),
-            _link.callback(
-                |_|{
-                    Msg::SendData
-                }
-            )
+        let interval = yew::services::IntervalService::spawn(
+            std::time::Duration::from_millis(100),
+            _link.callback(|_| Msg::SendData),
         );
-        let refreshinterval = yew::services::IntervalService::spawn(std::time::Duration::from_secs(1),
-            _link.callback(
-                |_|{
-                    Msg::Refresh
-                }
-            )
+        let refreshinterval = yew::services::IntervalService::spawn(
+            std::time::Duration::from_secs(1),
+            _link.callback(|_| Msg::Refresh),
         );
         Self {
             _socket_agent: agent,
@@ -124,10 +116,10 @@ impl Component for DrawWidget {
             toolboxopen: ToolBoxOpen::None,
             current_color: "black".to_string(),
             current_width: 2,
-            is_eraser:false,
-            send_interval:interval,
-            props:_props,
-            refresh_interval:refreshinterval
+            is_eraser: false,
+            send_interval: interval,
+            props: _props,
+            refresh_interval: refreshinterval,
         }
     }
 
@@ -135,35 +127,36 @@ impl Component for DrawWidget {
         match _msg {
             Msg::Ignore => false,
             Msg::Refresh => {
-                let canvas: HtmlCanvasElement = self.canvas_ref.cast().expect("Not html canvas element");
+                let canvas: HtmlCanvasElement =
+                    self.canvas_ref.cast().expect("Not html canvas element");
                 let rect = canvas.get_bounding_client_rect();
                 let error_margin = 15;
-                let mut draw=false;
-                if canvas.width() +error_margin < rect.width() as u32{
+                let mut draw = false;
+                if canvas.width() + error_margin < rect.width() as u32 {
                     canvas.set_width(rect.width() as u32);
-                    draw=true;
+                    draw = true;
                 }
-                if canvas.height() + error_margin < rect.height() as u32{
+                if canvas.height() + error_margin < rect.height() as u32 {
                     canvas.set_height(rect.height() as u32);
-                    draw=true;
+                    draw = true;
                 }
 
-                if canvas.width()  > (rect.width() as u32 )+ error_margin{
+                if canvas.width() > (rect.width() as u32) + error_margin {
                     canvas.set_width(rect.width() as u32);
-                    draw=true;
+                    draw = true;
                 }
-                if canvas.height() > (rect.height() as u32 )+ error_margin{
+                if canvas.height() > (rect.height() as u32) + error_margin {
                     canvas.set_height(rect.height() as u32);
-                    draw=true;
+                    draw = true;
                 }
-                
-                if draw{
+
+                if draw {
                     self.todraw.append(&mut self.points.clone());
                     self.draw();
                 }
 
                 true
-            },
+            }
             Msg::CanvasResize => {
                 self.resetcanvas();
                 true
@@ -184,19 +177,30 @@ impl Component for DrawWidget {
                 self.mouseup(ev);
                 false
             }
-            Msg::MouseExit(ev)=>{
-                self.pressed=false;
+            Msg::MouseExit(ev) => {
+                self.pressed = false;
                 self.hide_cursor();
                 false
             }
-            Msg::MouseWheel(ev)=>{
-                log::debug!("Change size with wheel size: {} {} {}",ev.delta_x(),ev.delta_y(),ev.delta_z());
-                self.current_width = (self.current_width as f64 - ev.delta_y())as u32;
-                let wid:HtmlElement = self.cursor_ref.cast().expect("Not htmlelement");
+            Msg::MouseWheel(ev) => {
+                log::debug!(
+                    "Change size with wheel size: {} {} {}",
+                    ev.delta_x(),
+                    ev.delta_y(),
+                    ev.delta_z()
+                );
+                self.current_width = (self.current_width as f64 - ev.delta_y()) as u32;
+                let wid: HtmlElement = self.cursor_ref.cast().expect("Not htmlelement");
                 let style = wid.style();
-                style.set_property("display",&format!("unset")).expect("Cant set top");
-                style.set_property("width",&format!("{}px",self.current_width)).expect("Cant set width");
-                style.set_property("height",&format!("{}px",self.current_width)).expect("Cant set height");
+                style
+                    .set_property("display", &format!("unset"))
+                    .expect("Cant set top");
+                style
+                    .set_property("width", &format!("{}px", self.current_width))
+                    .expect("Cant set width");
+                style
+                    .set_property("height", &format!("{}px", self.current_width))
+                    .expect("Cant set height");
                 ev.prevent_default();
                 false
             }
@@ -230,29 +234,29 @@ impl Component for DrawWidget {
                 self.toolboxopen = ToolBoxOpen::None;
                 true
             }
-            Msg::ToggleEraser=>{
-                self.is_eraser=!self.is_eraser;
+            Msg::ToggleEraser => {
+                self.is_eraser = !self.is_eraser;
                 true
             }
-            Msg::SetEraser=>{
-                self.is_eraser=true;
+            Msg::SetEraser => {
+                self.is_eraser = true;
                 true
             }
-            Msg::SetBrush=>{
-                self.is_eraser=false;
+            Msg::SetBrush => {
+                self.is_eraser = false;
                 false
             }
-            Msg::ClearDoc =>{
+            Msg::ClearDoc => {
                 self.points.clear();
                 self.resetcanvas();
                 false
             }
-            Msg::SendData=>{
-                if !self.todraw.is_empty(){
+            Msg::SendData => {
+                if !self.todraw.is_empty() {
                     self.draw();
                 }
-                if self.tosend.is_empty(){
-                   return true; 
+                if self.tosend.is_empty() {
+                    return true;
                 }
                 // TODO: FIX DRAW WIDGET
                 // self._socket_agent.send(
@@ -262,20 +266,19 @@ impl Component for DrawWidget {
                 //         )
                 //     )
                 // );
-                self._socket_agent.send(
-                    AgentInput::Send(
-                        PlayerMessage::AddPoints(self.tosend.clone())
-                    )
-                );
+                self._socket_agent
+                    .send(AgentInput::Send(PlayerMessage::AddPoints(
+                        self.tosend.clone(),
+                    )));
                 self.tosend.clear();
                 false
             }
-            Msg::SetData(mut data)=>{
-                if let Some(firstrcv)=data.first(){
-                    if let Some(lastp)=self.points.last(){
-                        if lastp.id>firstrcv.id{
-                            while let Some(p)=self.points.pop(){
-                                if p.id<=firstrcv.id{
+            Msg::SetData(mut data) => {
+                if let Some(firstrcv) = data.first() {
+                    if let Some(lastp) = self.points.last() {
+                        if lastp.id > firstrcv.id {
+                            while let Some(p) = self.points.pop() {
+                                if p.id <= firstrcv.id {
                                     break;
                                 }
                             }
@@ -288,7 +291,7 @@ impl Component for DrawWidget {
                 self.draw();
                 false
             }
-            Msg::Undo=>{
+            Msg::Undo => {
                 self.undo();
                 false
             }
@@ -297,7 +300,7 @@ impl Component for DrawWidget {
 
     fn rendered(&mut self, _first_render: bool) {
         // self.initcanvas();
-        if _first_render{
+        if _first_render {
             self.initcanvas();
         }
     }
@@ -307,35 +310,34 @@ impl Component for DrawWidget {
     }
 
     fn view(&self) -> Html {
-        if self.props.draw{
-
+        if self.props.draw {
             html! {
                 <>
                     <div style="">
-                    
+
                     <canvas style="box-sizing:content-box;border-color:black;border-style:solid;touch-action: none;width:100%;min-height:50vh;position:relative;cursor:none;" key="drawboard" onload=self.link.callback(|_|Msg::Setup)
                         onmousedown=self.link.callback(|ev|Msg::MouseDown(ev))
                         onmouseup=self.link.callback(|ev|Msg::MouseUp(ev))
                         onmousemove=self.link.callback(|ev|Msg::MouseMove(ev))
                         onmouseleave=self.link.callback(|ev|Msg::MouseExit(ev))
                         onwheel=self.link.callback(|ev|Msg::MouseWheel(ev))
-    
+
                         ontouchstart=self.link.callback(|ev|Msg::TouchStart(ev))
                         ontouchmove=self.link.callback(|ev|Msg::TouchMove(ev))
                         ontouchend=self.link.callback(|ev|Msg::TouchEnd(ev))
                         ontouchcancel=self.link.callback(|ev|Msg::TouchCancel(ev))
-    
+
                         onresize=self.link.callback(|_|Msg::CanvasResize)
-    
+
                     ref=self.canvas_ref.clone()>
                     </canvas>
                     <div ref=self.cursor_ref.clone() style="display:none;width:5px;height:5px;background-color:grey;z-index:20;position:fixed;border-radius:50%;pointer-events: none;transform:translate(-50%,-50%);">
-                        
+
                     </div>
-    
+
                     </div>
-    
-    
+
+
                     <div class="box ">
                         {
                             match self.toolboxopen{
@@ -391,7 +393,7 @@ impl Component for DrawWidget {
                             }
                         }
                         <div class="level is-mobile">
-    
+
                             <div class="level-left">
                                 <div class="tabs is-toggle is-toggle-rounded">
                                 <ul>
@@ -432,7 +434,7 @@ impl Component for DrawWidget {
                                             }
                                         }else{
                                             html!{
-    
+
                                                 <svg style="width:24px;height:24px" viewBox="0 0 24 24">
                                                     <path fill="currentColor" d="M16.24,3.56L21.19,8.5C21.97,9.29 21.97,10.55 21.19,11.34L12,20.53C10.44,22.09 7.91,22.09 6.34,20.53L2.81,17C2.03,16.21 2.03,14.95 2.81,14.16L13.41,3.56C14.2,2.78 15.46,2.78 16.24,3.56M4.22,15.58L7.76,19.11C8.54,19.9 9.8,19.9 10.59,19.11L14.12,15.58L9.17,10.63L4.22,15.58Z" />
                                                 </svg>
@@ -445,7 +447,7 @@ impl Component for DrawWidget {
                                 </ul>
                                 </div>
                             </div>
-    
+
                             <div class="level-right columns is-gapless is-mobile">
                                 <div class="column"
                                     onclick=self.link.callback(|_|Msg::SetToolBox(ToolBoxOpen::Brush))
@@ -490,16 +492,15 @@ impl Component for DrawWidget {
                     </div>
                 </>
             }
-        }
-        else{
-            html!{
+        } else {
+            html! {
                 <div>
                 <canvas style="box-sizing:content-box;border-color:black;border-style:solid;touch-action: none;width:100%;height:100%;min-height:50vh;position:relative;" key="drawboard" onload=self.link.callback(|_|Msg::Setup)
 
                     onresize=self.link.callback(|_|Msg::CanvasResize)
 
                 ref=self.canvas_ref.clone()/>
-                
+
                 </div>
             }
         }
@@ -527,8 +528,8 @@ fn brushsize(size: u32, color: &str) -> Html {
     }
 }
 
-fn undoicon() -> Html{
-    html!{
+fn undoicon() -> Html {
+    html! {
         <span class="icon">
             <svg style="width:24px;height:24px" viewBox="0 0 24 24">
                 <path fill="currentColor" d="M12.5,8C9.85,8 7.45,9 5.6,10.6L2,7V16H11L7.38,12.38C8.77,11.22 10.54,10.5 12.5,10.5C16.04,10.5 19.05,12.81 20.1,16L22.47,15.22C21.08,11.03 17.15,8 12.5,8Z" />
@@ -537,8 +538,8 @@ fn undoicon() -> Html{
     }
 }
 
-fn cleardocicon()->Html{
-    html!{
+fn cleardocicon() -> Html {
+    html! {
         <span class="icon">
             <svg style="width:24px;height:24px" viewBox="0 0 24 24">
                 <path fill="currentColor" d="M13,9V3.5L18.5,9M6,2C4.89,2 4,2.89 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2H6Z" />
@@ -562,24 +563,23 @@ impl DrawWidget {
         self.context = Some(context);
     }
 
-    fn set_point(&mut self,point:&Point){
-     
+    fn set_point(&mut self, point: &Point) {
         self.tosend.push(point.clone());
         self.todraw.push(point.clone());
-        self.points.push(point.clone());  
-        self.draw(); 
+        self.points.push(point.clone());
+        self.draw();
     }
 
-    fn setstroke_point(&mut self,point:&Point){
+    fn setstroke_point(&mut self, point: &Point) {
         self.undosequence.push(point.clone());
         self.set_point(point);
     }
 
-    fn undo(&mut self){
+    fn undo(&mut self) {
         let laststart = self.undosequence.pop();
-        if let Some(lastpoint)=laststart{
-            while let Some(point)=self.points.pop(){
-                if point.id<=lastpoint.id{
+        if let Some(lastpoint) = laststart {
+            while let Some(point) = self.points.pop() {
+                if point.id <= lastpoint.id {
                     break;
                 }
             }
@@ -602,42 +602,55 @@ impl DrawWidget {
                 draw: false,
                 color: self.current_color.clone(),
                 line_width: self.current_width,
-                eraser:self.is_eraser
+                eraser: self.is_eraser,
             };
 
             self.pressed = true;
 
             self.setstroke_point(&point);
-
         } else {
             log::warn!("Context not ready, not drawing");
         }
     }
 
-    fn set_cursor_pos(&mut self,ev:&MouseEvent){
-        let wid:HtmlElement = self.cursor_ref.cast().expect("Not htmlelement");
+    fn set_cursor_pos(&mut self, ev: &MouseEvent) {
+        let wid: HtmlElement = self.cursor_ref.cast().expect("Not htmlelement");
         let style = wid.style();
-        style.set_property("display",&format!("unset")).expect("Cant set top");
-        style.set_property("top",&format!("{}px",ev.client_y()-1)).expect("Cant set top");
-        style.set_property("left",&format!("{}px",ev.client_x()-1)).expect("Cant set left");
-        style.set_property("width",&format!("{}px",self.current_width)).expect("Cant set width");
-        style.set_property("height",&format!("{}px",self.current_width)).expect("Cant set height");
-        if self.is_eraser{
-            style.set_property("background-color","white").unwrap();
-            style.set_property("border-color","black").unwrap();
-            style.set_property("border-width","1px").unwrap();
-            style.set_property("border-style","solid").unwrap();
-        }else{
-            style.set_property("background-color",&format!("{}",self.current_color)).expect("Cant set height");   
-            style.set_property("border-color","black").unwrap();
-            style.set_property("border-width","1px").unwrap();
-            style.set_property("border-style","solid").unwrap();
+        style
+            .set_property("display", &format!("unset"))
+            .expect("Cant set top");
+        style
+            .set_property("top", &format!("{}px", ev.client_y() - 1))
+            .expect("Cant set top");
+        style
+            .set_property("left", &format!("{}px", ev.client_x() - 1))
+            .expect("Cant set left");
+        style
+            .set_property("width", &format!("{}px", self.current_width))
+            .expect("Cant set width");
+        style
+            .set_property("height", &format!("{}px", self.current_width))
+            .expect("Cant set height");
+        if self.is_eraser {
+            style.set_property("background-color", "white").unwrap();
+            style.set_property("border-color", "black").unwrap();
+            style.set_property("border-width", "1px").unwrap();
+            style.set_property("border-style", "solid").unwrap();
+        } else {
+            style
+                .set_property("background-color", &format!("{}", self.current_color))
+                .expect("Cant set height");
+            style.set_property("border-color", "black").unwrap();
+            style.set_property("border-width", "1px").unwrap();
+            style.set_property("border-style", "solid").unwrap();
         }
     }
-    fn hide_cursor(&mut self){
-        let wid:HtmlElement = self.cursor_ref.cast().expect("Not htmlelement");
+    fn hide_cursor(&mut self) {
+        let wid: HtmlElement = self.cursor_ref.cast().expect("Not htmlelement");
         let style = wid.style();
-        style.set_property("display",&format!("none")).expect("Cant set display");
+        style
+            .set_property("display", &format!("none"))
+            .expect("Cant set display");
     }
 
     fn mouseup(&mut self, event: MouseEvent) {
@@ -655,12 +668,11 @@ impl DrawWidget {
                 draw: true,
                 color: self.current_color.clone(),
                 line_width: self.current_width,
-                eraser:self.is_eraser,
+                eraser: self.is_eraser,
             };
 
             self.set_point(&point);
-            // self.draw();
-
+        // self.draw();
 
         // self.points.push(
         //     Point{
@@ -691,11 +703,10 @@ impl DrawWidget {
                     draw: true,
                     color: self.current_color.clone(),
                     line_width: self.current_width,
-                    eraser: self.is_eraser
+                    eraser: self.is_eraser,
                 };
 
                 self.set_point(&point);
-
 
                 self.draw();
                 // context.line_to(event.offset_x() as f64, event.offset_y() as f64);
@@ -738,15 +749,15 @@ impl DrawWidget {
                     // context.line_to(point.get_x(&canvas), point.get_y(&canvas));
                     // context.stroke();
                     context.move_to(point.get_x(&canvas), point.get_y(&canvas));
-                }
-                else {
+                } else {
                     context.line_to(point.get_x(&canvas), point.get_y(&canvas));
-                    if point.eraser{
+                    if point.eraser {
                         context.set_stroke_style(&JsValue::from_str("white"));
-                    }else{
+                    } else {
                         context.set_stroke_style(&JsValue::from_str(&point.color));
                     }
-                    context.set_line_width(point.line_width as f64 * point.get_scale_factor(&canvas));
+                    context
+                        .set_line_width(point.line_width as f64 * point.get_scale_factor(&canvas));
                     context.set_line_cap("round");
                     context.stroke();
                     context.begin_path();
@@ -773,11 +784,10 @@ impl DrawWidget {
                 draw: false,
                 color: self.current_color.clone(),
                 line_width: self.current_width,
-                eraser:self.is_eraser
+                eraser: self.is_eraser,
             };
 
             self.setstroke_point(&point);
-
 
             self.pressed = true;
         } else {
@@ -800,7 +810,7 @@ impl DrawWidget {
                 draw: false,
                 color: self.current_color.clone(),
                 line_width: self.current_width,
-                eraser:self.is_eraser
+                eraser: self.is_eraser,
             };
 
             self.set_point(&point);
@@ -827,7 +837,7 @@ impl DrawWidget {
                     draw: true,
                     color: self.current_color.clone(),
                     line_width: self.current_width,
-                    eraser:self.is_eraser
+                    eraser: self.is_eraser,
                 };
                 self.set_point(&point);
 

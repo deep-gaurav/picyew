@@ -5,14 +5,14 @@ use crate::peer::PeerWidget;
 use crate::socket_agent::*;
 use crate::structures::*;
 
-use crate::app::{go_to_route,AppRoute};
+use crate::app::{go_to_route, AppRoute};
 
 pub struct Room {
     _socket_agent: Box<dyn yew::Bridge<SocketAgent>>,
-    link:ComponentLink<Self>,
+    link: ComponentLink<Self>,
     lobby: Lobby,
     selfid: String,
-    gamestartcb: Callback<Lobby>
+    gamestartcb: Callback<Lobby>,
 }
 
 pub enum Msg {
@@ -23,16 +23,15 @@ pub enum Msg {
 
     PlayerJoined(Player),
     PlayerDisconnected(Player),
-    
-    LeaderChange(State)
-    // Chat(String,String)
+
+    LeaderChange(State), // Chat(String,String)
 }
 
 #[derive(Properties, Clone, Debug)]
 pub struct Props {
     pub lobby: Lobby,
     pub selfid: String,
-    pub gamestartcb: Callback<Lobby>
+    pub gamestartcb: Callback<Lobby>,
 }
 
 impl Component for Room {
@@ -41,35 +40,26 @@ impl Component for Room {
 
     fn create(_props: Self::Properties, _link: ComponentLink<Self>) -> Self {
         let agent = SocketAgent::bridge(_link.callback(|data| match data {
-           
-           AgentOutput::SocketMessage(msg)=>{
-               match msg{
-                   SocketMessage::PlayerJoined(pl)=>{
-                       Msg::PlayerJoined(pl)
-                   }
-                   SocketMessage::PlayerDisconnected(player)=>{
-                       Msg::PlayerDisconnected(player)
-                   }
-                   SocketMessage::LeaderChange(leader)=>{
-                       Msg::LeaderChange(leader)
-                   }
-                   SocketMessage::GameStart(state)=>{
-                       Msg::GameStarted(state)
-                   }
-                   _=>{
-                    //    log::warn!("Unexpected socket message {:#?}",msg);
-                       Msg::Ignore
-                   }
-               }
-           }
-            _ => Msg::Ignore
+            AgentOutput::SocketMessage(msg) => {
+                match msg {
+                    SocketMessage::PlayerJoined(pl) => Msg::PlayerJoined(pl),
+                    SocketMessage::PlayerDisconnected(player) => Msg::PlayerDisconnected(player),
+                    SocketMessage::LeaderChange(leader) => Msg::LeaderChange(leader),
+                    SocketMessage::GameStart(state) => Msg::GameStarted(state),
+                    _ => {
+                        //    log::warn!("Unexpected socket message {:#?}",msg);
+                        Msg::Ignore
+                    }
+                }
+            }
+            _ => Msg::Ignore,
         }));
         Self {
             _socket_agent: agent,
             lobby: _props.lobby,
-            link:_link,
+            link: _link,
             selfid: _props.selfid,
-            gamestartcb: _props.gamestartcb
+            gamestartcb: _props.gamestartcb,
         }
     }
 
@@ -81,9 +71,8 @@ impl Component for Room {
                 true
             }
             Msg::StartGame => {
-                self._socket_agent.send(
-                    AgentInput::Send(PlayerMessage::StartGame)
-                );
+                self._socket_agent
+                    .send(AgentInput::Send(PlayerMessage::StartGame));
                 false
             }
             Msg::GameStarted(state) => {
@@ -94,17 +83,17 @@ impl Component for Room {
                 self.gamestartcb.emit(self.lobby.clone());
                 true
             }
-            Msg::PlayerJoined(player)=>{
+            Msg::PlayerJoined(player) => {
                 self.lobby.players.insert(player.id.clone(), player);
                 true
             }
-            Msg::PlayerDisconnected(player)=>{
-                if let Some(pl)=self.lobby.players.remove(&player.id){
-                    log::debug!("Player Removed {:#?}",pl);
+            Msg::PlayerDisconnected(player) => {
+                if let Some(pl) = self.lobby.players.remove(&player.id) {
+                    log::debug!("Player Removed {:#?}", pl);
                 }
                 true
             }
-            Msg::LeaderChange(leader)=>{
+            Msg::LeaderChange(leader) => {
                 self.lobby.state = leader;
                 true
             }
@@ -149,7 +138,7 @@ impl Component for Room {
 
                         }
                     }
-                    
+
                 }
                 </div>
                     <ChatHistory lobby=self.lobby.clone()/>

@@ -4,7 +4,7 @@
         <meta charset="utf-8" />
         <title>Pictionary</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="stylesheet" href="/lumen.min.css">
+        <link data-trunk rel="css" href="lumen.min.css">
         <!-- <link rel="stylesheet" href="/bulma-prefers-dark.css"> -->
         <script>
             history.pushState = ( f => function pushState(){
@@ -73,6 +73,7 @@
     <body>
         <script src="https://unpkg.com/@popperjs/core@2"></script>
         <script src="https://unpkg.com/tippy.js@6"></script>
+        <script src="https://unpkg.com/oscilloscope@1.2.0"></script>
         <script>
             tippy.setDefaultProps({delay: 50});
             let t = + new Date();
@@ -83,8 +84,7 @@
         <div class="loaderbg has-background-primary">
             <div class="spinner"></div>
         </div>
-        <script src="/bundle.js" defer></script>
-        <script type="text/javascript" id="matomo">
+        <!-- <script type="text/javascript" id="matomo">
             var _paq = window._paq || [];
             /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
             _paq.push(['trackPageView']);
@@ -103,7 +103,7 @@
                 _paq.push(['setGenerationTimeMs', 3000]);
                 _paq.push(['trackPageView']);
             });
-        </script>
+        </script> -->
           <!-- End Matomo Code -->
     </body>
 </html>

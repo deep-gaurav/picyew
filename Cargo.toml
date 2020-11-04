@@ -13,8 +13,8 @@ readme = "README.md"
 repository = "https://github.com/deep-gaurav/deep-gaurav"
 version = "0.1.0"
 
-[lib]
-crate-type = ["cdylib", "rlib"]
+# [lib]
+# crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 log = "0.4"
@@ -27,6 +27,7 @@ wasm-bindgen-futures = "0.4.13"
 wasm-logger = "0.2"
 wee_alloc = { version = "0.4.5", optional = true }
 yew = "0.17.2"
+yewtil = "0.3.2"
 yew-router = "0.14.0"
 serde_json = "1.0"
 lazy_static = "1.4.0"
@@ -60,5 +61,16 @@ features = [
   'TouchList',
   'Touch',
   'BinaryType',
-  'HtmlAudioElement'
+  'HtmlAudioElement',
+  'MediaDevices',
+  'MediaStreamConstraints',
+  'MediaStream',
+  'MediaRecorder',
+  'Navigator',
+  'BlobEvent',
+  'Blob',
+  'Url',
+  'FileReaderSync',
+  'BlobPropertyBag',
+  'MediaRecorderOptions'
 ]

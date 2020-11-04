@@ -13,10 +13,9 @@ use web_sys::*;
 
 use crate::structures::*;
 
-
 pub enum AgentInput {
     Connect(String),
-    Send(PlayerMessage)
+    Send(PlayerMessage),
 }
 
 #[derive(Clone, Debug)]
@@ -24,7 +23,7 @@ pub enum AgentOutput {
     SocketMessage(SocketMessage),
     SocketConnected,
     SocketDisconnected,
-    SocketErrorConnecting
+    SocketErrorConnecting,
 }
 
 pub struct SocketAgent {
@@ -34,8 +33,6 @@ pub struct SocketAgent {
     updatecallback: Callback<(WebSocket, String)>,
 }
 
-
-
 pub enum Msg {
     Connected((WebSocket, String)),
     Disconnected,
@@ -44,11 +41,9 @@ pub enum Msg {
 
     // PeerConnect(u32),
     // PeerDisconnect(u32),
-
     SendSocketMessage(PlayerMessage),
     Ignore,
 }
-
 
 impl Agent for SocketAgent {
     type Reach = Context<Self>;
@@ -82,18 +77,16 @@ impl Agent for SocketAgent {
                 let linkclone = self.link.clone();
                 let onmessage_callback = Closure::wrap(Box::new(move |e: MessageEvent| {
                     // handle message
-                    
+
                     let uint8array = js_sys::Uint8Array::new(&e.data());
-                    let vec =uint8array.to_vec();
-                    match bincode::deserialize(&vec[..]){
-                        Ok(msg)=>{
-                            linkclone.send_message(Msg::SocketMessage(msg))
-                        }
-                        Err(er)=>{
-                            log::error!("Message received not Socket Message {:#?} {:#?}",er,vec);
-                            log::error!("Is text {}",e.data().is_string());
-                            log::error!("Data {:#?}",js_sys::Uint8Array::new(&e.data()).to_vec());
-                            log::error!("Data {:#?}",js_sys::Uint16Array::new(&e.data()).to_vec());
+                    let vec = uint8array.to_vec();
+                    match bincode::deserialize(&vec[..]) {
+                        Ok(msg) => linkclone.send_message(Msg::SocketMessage(msg)),
+                        Err(er) => {
+                            log::error!("Message received not Socket Message {:#?} {:#?}", er, vec);
+                            log::error!("Is text {}", e.data().is_string());
+                            log::error!("Data {:#?}", js_sys::Uint8Array::new(&e.data()).to_vec());
+                            log::error!("Data {:#?}", js_sys::Uint16Array::new(&e.data()).to_vec());
                         }
                     }
                 })
@@ -105,10 +98,8 @@ impl Agent for SocketAgent {
                 onmessage_callback.forget();
                 self.socket = Some(socket.0);
                 for subs in self.subscribers.iter() {
-                    self.link.respond(
-                        subs.clone(),
-                        AgentOutput::SocketConnected,
-                    )
+                    self.link
+                        .respond(subs.clone(), AgentOutput::SocketConnected)
                 }
             }
             Msg::SocketMessage(msg) => {
@@ -125,7 +116,7 @@ impl Agent for SocketAgent {
             Msg::SendSocketMessage(data) => {
                 self.send_socket_message(&data);
             }
-            Msg::ErrorConnecting=>{
+            Msg::ErrorConnecting => {
                 self.broadcast(AgentOutput::SocketErrorConnecting);
             }
 
@@ -135,10 +126,10 @@ impl Agent for SocketAgent {
 
     fn handle_input(&mut self, msg: Self::Input, _id: HandlerId) {
         match msg {
-            AgentInput::Connect(url)=>{
+            AgentInput::Connect(url) => {
                 self.connect_to_socket(url);
             }
-            AgentInput::Send(msg)=>{
+            AgentInput::Send(msg) => {
                 self.send_socket_message(&msg);
             }
         }
@@ -152,18 +143,15 @@ impl SocketAgent {
             self.link.respond(subs.clone(), output.clone());
         }
     }
-    fn connect_to_socket(&mut self,url:String){
+    fn connect_to_socket(&mut self, url: String) {
         let subscribers = self.subscribers.clone();
         let linkclone = self.link.clone();
 
         let onerror_callback = Closure::wrap(Box::new(move |_| {
             for subs in subscribers.clone() {
-                linkclone.clone().send_message(
-                    Msg::ErrorConnecting
-                );
+                linkclone.clone().send_message(Msg::ErrorConnecting);
             }
-        })
-            as Box<dyn FnMut(JsValue)>);
+        }) as Box<dyn FnMut(JsValue)>);
 
         let ws = WebSocket::new(&format!("{}", url));
         match ws {
@@ -172,8 +160,7 @@ impl SocketAgent {
                 let updatecallback = self.updatecallback.clone();
                 let onopen_callback = Closure::wrap(Box::new(move |_| {
                     updatecallback.emit((wss.clone(), url.clone()));
-                })
-                    as Box<dyn FnMut(JsValue)>);
+                }) as Box<dyn FnMut(JsValue)>);
                 ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
 
                 ws.set_onopen(Some(onopen_callback.as_ref().unchecked_ref()));
@@ -184,8 +171,7 @@ impl SocketAgent {
                 let linkclone = self.link.clone();
                 let onclose_callback = Closure::wrap(Box::new(move |_| {
                     linkclone.send_message(Msg::Disconnected);
-                })
-                    as Box<dyn FnMut(JsValue)>);
+                }) as Box<dyn FnMut(JsValue)>);
 
                 ws.set_onclose(Some(onclose_callback.as_ref().unchecked_ref()));
                 onclose_callback.forget();
@@ -200,20 +186,16 @@ impl SocketAgent {
     fn send_socket_message(&self, data: &PlayerMessage) {
         // log::debug!("Send Message {:#?}",data);
         match &self.socket {
-            Some(socket) => {
-                match bincode::serialize(&data){
-                    Ok(bytes)=>{
-                        if let Err(er)=socket.send_with_u8_array(
-                            &bytes[..]
-                        ){
-                            log::warn!("Cant send message {:#?}",er);
-                        }
-                    }
-                    Err(er)=>{
-                        log::error!("Cant serialize to bincode data {:#?}",data);
+            Some(socket) => match bincode::serialize(&data) {
+                Ok(bytes) => {
+                    if let Err(er) = socket.send_with_u8_array(&bytes[..]) {
+                        log::warn!("Cant send message {:#?}", er);
                     }
                 }
-            }
+                Err(er) => {
+                    log::error!("Cant serialize to bincode data {:#?}", data);
+                }
+            },
             None => log::error!("Trying to send data without connection {:#?}", data),
         }
     }

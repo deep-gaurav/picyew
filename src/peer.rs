@@ -1,24 +1,24 @@
 use yew::prelude::*;
 
-use crate::structures::*;
 use crate::socket_agent::*;
+use crate::structures::*;
 
 use wasm_bindgen::prelude::*;
 #[wasm_bindgen]
-extern "C"{
+extern "C" {
     pub type Tippy;
 
     #[wasm_bindgen(js_namespace = window)]
-    pub fn tippy(selector:&str)->Tippy;
+    pub fn tippy(selector: &str) -> Tippy;
 
     #[wasm_bindgen(method)]
-    pub fn show(this:&Tippy);
+    pub fn show(this: &Tippy);
 
     #[wasm_bindgen(method)]
-    pub fn hide(this:&Tippy);
+    pub fn hide(this: &Tippy);
 
     #[wasm_bindgen(method)]
-    pub fn setContent(this:&Tippy,content:&str);
+    pub fn setContent(this: &Tippy, content: &str);
 
 }
 
@@ -26,7 +26,7 @@ pub struct PeerWidget {
     _socket_agent: Box<dyn yew::Bridge<SocketAgent>>,
     state: State,
     peer: Player,
-    tippy: Option<Tippy>
+    tippy: Option<Tippy>,
 }
 
 pub enum Msg {
@@ -63,37 +63,35 @@ impl Component for PeerWidget {
     }
 
     fn change(&mut self, _props: Self::Properties) -> ShouldRender {
-        self.state=_props.state;
-        self.peer=_props.peer;
+        self.state = _props.state;
+        self.peer = _props.peer;
         true
     }
 
-    fn rendered(&mut self, _first_render: bool) {
-    }
+    fn rendered(&mut self, _first_render: bool) {}
 
     fn view(&self) -> Html {
         use crate::avatar::avatar;
         let score = {
-            match &self.state{
-                State::Lobby(_)=>html!{},
-                State::Game(leader,score,data)=>{
+            match &self.state {
+                State::Lobby(_) => html! {},
+                State::Game(leader, score, data) => {
                     let score = score.scores.get(&self.peer.id).unwrap_or(&0).to_string();
-                    html!{
+                    html! {
                         score
                     }
                 }
             }
         };
         let color = {
-            match &self.state{
-                State::Lobby(_)=>"transparent",
-                State::Game(leader,_,data)=>{
-                    if &self.peer.id == leader{
+            match &self.state {
+                State::Lobby(_) => "transparent",
+                State::Game(leader, _, data) => {
+                    if &self.peer.id == leader {
                         "blue"
-                    }
-                    else if data.guessed.contains(&self.peer.id){
+                    } else if data.guessed.contains(&self.peer.id) {
                         "green"
-                    }else{
+                    } else {
                         "black"
                     }
                 }

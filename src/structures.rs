@@ -1,31 +1,29 @@
 use std::collections::HashMap;
 
-use serde::{Serialize,Deserialize};
+use serde::{Deserialize, Serialize};
 
-
-#[derive(Default,Debug)]
+#[derive(Default, Debug)]
 pub struct Lobbies {
     pub private_lobbies: HashMap<String, Lobby>,
 }
 
-#[derive(Deserialize,Debug,Clone)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Lobby {
     pub id: String,
     pub players: HashMap<String, Player>,
-    pub state:State,
+    pub state: State,
     pub draw_time: u32,
 }
 
-
-#[derive(Debug,Deserialize,Clone)]
-pub enum State{
+#[derive(Debug, Deserialize, Clone)]
+pub enum State {
     Lobby(String),
-    Game(String,Scores, GameData),
+    Game(String, Scores, GameData),
 }
 
 use std::collections::HashSet;
-#[derive(Debug,Deserialize,Clone,Default)]
-pub struct GameData{
+#[derive(Debug, Deserialize, Clone, Default)]
+pub struct GameData {
     pub drawing: Vec<Point>,
     pub guessed: HashSet<String>,
     pub time: u32,
@@ -33,12 +31,12 @@ pub struct GameData{
 }
 
 #[derive(Debug, Deserialize, Clone, Default)]
-pub struct Scores{
-    pub scores: HashMap<String,u32>
+pub struct Scores {
+    pub scores: HashMap<String, u32>,
 }
 
-#[derive(Debug, Deserialize,Clone)]
-pub enum WordState{
+#[derive(Debug, Deserialize, Clone)]
+pub enum WordState {
     ChoseWords(Vec<String>),
     Word(String),
 }
@@ -57,19 +55,18 @@ impl Point {
         self.y * self.get_scale_factor(canvas)
     }
 
-    pub fn get_scale_factor(&self,canvas: &HtmlCanvasElement)->f64{
-        let wf = canvas.width() as f64/self.width;
-        let hf = canvas.height() as f64/self.height;
-        if wf<hf{
+    pub fn get_scale_factor(&self, canvas: &HtmlCanvasElement) -> f64 {
+        let wf = canvas.width() as f64 / self.width;
+        let hf = canvas.height() as f64 / self.height;
+        if wf < hf {
             wf
-        } else{
+        } else {
             hf
         }
     }
 }
 
-
-#[derive(Serialize, Deserialize, Clone,Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Point {
     pub id: u32,
     pub line_width: u32,
@@ -79,38 +76,37 @@ pub struct Point {
     pub height: f64,
     pub draw: bool,
     pub color: String,
-    pub eraser: bool
+    pub eraser: bool,
 }
 
 impl State {
-    pub fn leader(&self)->&str{
-        match &self{
-            State::Lobby(id)=>id,
-            State::Game(id,_,_)=>id
+    pub fn leader(&self) -> &str {
+        match &self {
+            State::Lobby(id) => id,
+            State::Game(id, _, _) => id,
         }
     }
 }
 
-
-#[derive(Debug,Clone,Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Player {
     pub id: String,
     pub name: String,
-    pub status:PlayerStatus
+    pub status: PlayerStatus,
 }
 
-#[derive(Debug,Clone,Serialize,Deserialize)]
-pub enum PlayerStatus{
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum PlayerStatus {
     Initiated,
     JoinedLobby(String),
 }
 
-#[derive(Debug,Deserialize,Copy, Clone)]
+#[derive(Debug, Deserialize, Copy, Clone)]
 pub enum CloseCodes {
     WrongInit,
     CantCreateLobby,
     CantLoinLobbyDoestExist,
-    NewSessionOpened
+    NewSessionOpened,
 }
 impl std::fmt::Display for CloseCodes {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -118,7 +114,13 @@ impl std::fmt::Display for CloseCodes {
     }
 }
 
-#[derive(Serialize,Deserialize,Debug)]
+#[derive(Debug, Serialize, Clone, Deserialize)]
+pub struct AudioChunk {
+    pub data: Vec<u8>,
+    pub type_: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub enum PlayerMessage {
     Initialize(String, String),
     JoinLobby(String),
@@ -127,12 +129,14 @@ pub enum PlayerMessage {
     Ping,
 
     Chat(String),
+
+    AudioChat(AudioChunk),
     StartGame,
 
     AddPoints(Vec<Point>),
 }
 
-#[derive(Debug,Deserialize,Clone)]
+#[derive(Debug, Deserialize, Clone)]
 pub enum SocketMessage {
     LobbyJoined(Lobby),
     PlayerJoined(Player),
@@ -140,6 +144,7 @@ pub enum SocketMessage {
     Close(CloseCodes),
 
     Chat(String, String),
+    AudioChat(String, AudioChunk),
     LeaderChange(State),
     ScoreChange(State),
     TimeUpdate(State),

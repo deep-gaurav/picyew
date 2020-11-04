@@ -1,20 +1,17 @@
-set -x
+#!/usr/bin/env bash
+
+set -e
+
 curl https://sh.rustup.rs -sSf | sh -s - --default-toolchain stable -y
 source ~/.cargo/env
 
-curl -L https://github.com/rustwasm/wasm-pack/releases/download/v0.9.1/wasm-pack-v0.9.1-x86_64-unknown-linux-musl.tar.gz --output wasm-pack-v0.9.1-x86_64-unknown-linux-musl.tar.gz
+curl -L https://github.com/thedodd/trunk/releases/download/v0.7.4/trunk-x86_64-unknown-linux-gnu.tar.gz --output trunk.tar.gz
+tar -zxvf trunk.tar.gz
 
-ls -l
-tar -zxvf wasm-pack-v0.9.1-x86_64-unknown-linux-musl.tar.gz
+export PATH="$PATH:$PWD"
 
-export PATH="$PATH:$PWD/wasm-pack-v0.9.1-x86_64-unknown-linux-musl"
+cargo install wasm-bindgen-cli
 
-npm install -g rollup
+rustup target add wasm32-unknown-unknown
 
-wasm-pack build --target web --out-name package
-rollup ./main.js --format iife --file ./pkg/bundle.js
-
-mkdir -p dist
-cp -r static/* dist/
-cp pkg/bundle.js dist/
-cp pkg/package_bg.wasm dist/
+trunk build --release
