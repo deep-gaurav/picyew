@@ -227,6 +227,7 @@ impl Component for ChatHistory {
 }
 
 async fn get_audio_stream() -> Result<JsValue, JsValue> {
+    return Err(JsValue::from_str("disabling audio chat"));
     let navigator: Navigator = yew::utils::window().navigator();
     let mediadevices: MediaDevices = navigator.media_devices()?;
     let mut constraints = MediaStreamConstraints::new();
