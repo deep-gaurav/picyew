@@ -8,7 +8,7 @@ use lazy_static::lazy_static;
 use wasm_bindgen::*;
 
 lazy_static! {
-    static ref SIGNAL_URL: String = String::from("wss://signalws.herokuapp.com");
+    static ref SIGNAL_URL: String = String::from("wss://pictionary-be.sodeep.me");
 }
 
 pub struct Home {
